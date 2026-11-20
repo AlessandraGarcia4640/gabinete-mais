@@ -42,6 +42,7 @@ export const createApp = (loginService = new LoginService({
   verifyToken: createAccessTokenVerifier(env.JWT_ACCESS_SECRET), findSession,
 }), userLookup = findPublicUserById, usersRepository = managementRepository, routineRepository = routinesRepository, checklistRepository = checklistsRepository, contactRepository = contactsRepository, taskRepository = tasksRepository): Express => {
   const app = express();
+  if (process.env.VERCEL === '1') app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use(contentSecurityPolicy(), crossOriginOpenerPolicy(), crossOriginResourcePolicy(), originAgentCluster(), referrerPolicy(), strictTransportSecurity(), xContentTypeOptions(), xDnsPrefetchControl(), xDownloadOptions(), xFrameOptions(), xPermittedCrossDomainPolicies(), xPoweredBy(), xXssProtection());
   app.use(cors());
