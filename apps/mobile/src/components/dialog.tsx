@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { radius, size, spacing } from '../lib/theme';
 import { useTheme } from '../providers/theme-provider';
 import { AppText } from './app-text';
+import { Banner } from './banner';
 import { Button } from './button';
 import { Icon } from './icon';
 import { Overlay, type OverlayVisibility } from './overlay';
@@ -13,10 +14,11 @@ interface DialogProps extends OverlayVisibility {
   onConfirm: () => void;
   busy?: boolean;
   intent?: 'danger' | 'primary';
+  error?: string;
 }
 
 export function Dialog({
-  message, confirmLabel, dismissLabel, onConfirm, onDismiss, busy = false, intent = 'danger', ...visibility
+  message, confirmLabel, dismissLabel, onConfirm, onDismiss, busy = false, intent = 'danger', error, ...visibility
 }: DialogProps) {
   const { colors } = useTheme();
   const destructive = intent === 'danger';
@@ -33,6 +35,7 @@ export function Dialog({
     >
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         <AppText variant="body" color="inkMuted">{message}</AppText>
+        {!!error && <Banner tone="danger" message={error} />}
         <View style={styles.actions}>
           <Button label={confirmLabel} onPress={onConfirm} variant={intent} loading={busy} />
           <Button label={dismissLabel} onPress={onDismiss} variant="secondary" disabled={busy} />

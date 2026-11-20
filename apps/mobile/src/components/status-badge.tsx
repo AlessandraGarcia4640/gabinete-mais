@@ -21,13 +21,13 @@ const statusTones: Record<Status, Tone> = {
 
 const late: Tone = { background: 'dangerSoft', color: 'danger', icon: 'alert-triangle', label: strings.dashboard.overdue };
 
-export function StatusBadge({ status, overdue = false }: { status: Status; overdue?: boolean }) {
+export function StatusBadge({ status, overdue = false, label }: { status: Status; overdue?: boolean; label?: string }) {
   const { colors } = useTheme();
   const appearance = overdue ? late : statusTones[status];
   return (
     <View style={[styles.badge, { backgroundColor: colors[appearance.background] }]}>
       <Icon name={appearance.icon} color={appearance.color} size={iconSize.extraSmall} />
-      <AppText variant="caption" emphasis color={appearance.color} style={styles.label}>{appearance.label}</AppText>
+      <AppText variant="caption" emphasis color={appearance.color} style={styles.label}>{label ?? appearance.label}</AppText>
     </View>
   );
 }

@@ -17,7 +17,7 @@ export function AppBar({ title, onBack, action }: AppBarProps) {
   return (
     <View style={[styles.bar, { backgroundColor: colors.bg }]}>
       {onBack && <IconButton label={strings.nav.back} icon="arrow-left" onPress={onBack} />}
-      <AppText variant="titleLg" accessibilityRole="header" style={styles.title}>{title}</AppText>
+      <AppText variant="heading" accessibilityRole="header" style={styles.title}>{title}</AppText>
       {action}
     </View>
   );

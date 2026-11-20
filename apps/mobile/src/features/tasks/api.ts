@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { taskSchema, taskPageSchema, taskListQuerySchema, createTaskSchema, updateTaskSchema, assignTaskSchema, changeTaskStatusSchema, userIdParamsSchema,
   taskHistoryQuerySchema, taskEventPageSchema, userPageSchema, userListQuerySchema, userDetailSchema, routinePageSchema, routineListQuerySchema,
-  contactPageSchema, contactListQuerySchema, checklistRunPageSchema, checklistRunQuerySchema, type CreateTask, type UpdateTask, type Task } from '@gabinete-plus/shared';
+  contactPageSchema, contactListQuerySchema, checklistRunPageSchema, checklistRunQuerySchema, type CreateTask, type UpdateTask, type Task, type UserSummary } from '@gabinete-plus/shared';
 import type { HttpAuthApi } from '../auth/api.js';
 import type { SessionManager } from '../auth/session-manager.js';
 import { ApiFailure } from '../../lib/api-error.js';
 function search(query: Record<string, string | number | boolean | undefined>) { const params = new URLSearchParams(); for (const [key, value] of Object.entries(query)) if (value !== undefined) params.set(key, String(value)); return params.toString(); }
 function target(id: string) { return encodeURIComponent(userIdParamsSchema.parse({ id }).id); }
 export type ResourceKind = 'person' | 'routine' | 'contact' | 'run';
-export interface ResourceOption { id: string; label: string; routineId?: string; routineTitle?: string }
+export interface ResourceOption { id: string; label: string; role?: UserSummary['role']; routineId?: string; routineTitle?: string }
 export interface ResourcePage { items: ResourceOption[]; nextCursor: string | null }
 export class TasksApi {
   constructor(private readonly http: HttpAuthApi, private readonly manager: SessionManager) {}
@@ -29,7 +29,7 @@ export class TasksApi {
   choices(kind: ResourceKind, cursor: string, assigneeId: string, routineId: string | null, signal?: AbortSignal): Promise<ResourcePage> {
     const paging = { limit: 20, ...(cursor ? { cursor } : {}) };
     return this.manager.authorized(async (token) => {
-      if (kind === 'person') { const page = await this.http.get(`/users?${search(userListQuerySchema.parse({ ...paging, isActive: 'true' }))}`, userPageSchema, token, signal); return { ...page, items: page.items.map((item) => ({ id: item.id, label: item.name })) }; }
+      if (kind === 'person') { const page = await this.http.get(`/users?${search(userListQuerySchema.parse({ ...paging, isActive: 'true' }))}`, userPageSchema, token, signal); return { ...page, items: page.items.map((item) => ({ id: item.id, label: item.name, role: item.role })) }; }
       if (kind === 'routine') { const page = await this.http.get(`/routines?${search(routineListQuerySchema.parse({ ...paging, isArchived: 'false' }))}`, routinePageSchema, token, signal); return { ...page, items: page.items.map((item) => ({ id: item.id, label: item.title })) }; }
       if (kind === 'contact') { const page = await this.http.get(`/contacts?${search(contactListQuerySchema.parse({ ...paging, isArchived: 'false' }))}`, contactPageSchema, token, signal); return { ...page, items: page.items.map((item) => ({ id: item.id, label: `${item.name} · ${item.organization}` })) }; }
       const page = await this.http.get(`/checklists/runs?${search(checklistRunQuerySchema.parse({ ...paging, assigneeId, ...(routineId ? { routineId } : {}) }))}`, checklistRunPageSchema, token, signal);

@@ -62,6 +62,7 @@ export function TaskForm({ task, onSaved, onCancel }: { task?: Task; onSaved: (t
         <Button label={strings.routines.cancel} variant="secondary" disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
         {discard && <><AppText variant="body">{strings.routines.unsavedTitle}</AppText><Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} variant="secondary" onPress={() => setDiscard(false)} /></>}
       </View>} />
-    {!!picker && <ResourcePicker kind={picker} assigneeId={assigneeId} routineId={routineId} onSelect={(option) => select(picker, option)} onClose={() => setPicker(null)} />}
+    {!!picker && <ResourcePicker kind={picker} assigneeId={assigneeId} routineId={routineId} onSelect={(option) => select(picker, option)} onClose={() => setPicker(null)}
+      onClear={picker === 'person' ? undefined : () => { clear(picker); setPicker(null); }} />}
   </Screen>;
 }

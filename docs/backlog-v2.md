@@ -13,6 +13,7 @@ Itens fora desta entrega que dependem de API, contrato, dependência ou decisão
 | Selo de progresso do checklist nas rotinas de hoje | Início | Dado de execução do dia na listagem de rotinas. |
 | Dia da semana e ocorrência recorrente no resumo da rotina | Início | Agenda recorrente estruturada. O filtro atual inclui rotinas diárias sem data específica e rotinas cuja data específica coincide com o dia. |
 | “N tarefas abertas” por integrante | Folha “Escolher responsável” | Contagem por pessoa na API de usuários/tarefas. |
+| Identificar orientações copiadas da rotina no cadastro | Detalhes da tarefa | O registro contém o texto atual e o vínculo, sem indicar a origem do texto nem se houve edição posterior. |
 | Contadores dos módulos | Gabinete | Endpoint de totais. |
 | Contador de pendências no item “Tarefas” | Barra lateral (web) | Mesmo endpoint de contagem do Início. |
 | Identificação institucional do gabinete abaixo da marca | Barra lateral (web) | O contrato da sessão não informa nome, número ou turma do gabinete. |

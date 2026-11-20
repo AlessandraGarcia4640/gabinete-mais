@@ -15,10 +15,11 @@ interface ListRowProps {
   onPress?: () => void;
   selected?: boolean;
   accessibilityLabel?: string;
+  selection?: 'radio';
 }
 
 export function ListRow({
-  title, description, start, end, icon, onPress, selected, accessibilityLabel,
+  title, description, start, end, icon, onPress, selected, accessibilityLabel, selection,
 }: ListRowProps) {
   const { colors } = useTheme();
   const content = (
@@ -33,15 +34,16 @@ export function ListRow({
         {!!description && <AppText variant="caption" color="inkMuted">{description}</AppText>}
       </View>
       {end}
-      {onPress && <Icon name="chevron-right" size={iconSize.small} color="inkSubtle" />}
+      {onPress && !selection && <Icon name="chevron-right" size={iconSize.small} color="inkSubtle" />}
     </>
   );
   if (!onPress) return <View style={styles.row}>{content}</View>;
   return (
     <Control
-      accessibilityRole="button"
+      accessibilityRole={selection ?? 'button'}
       accessibilityLabel={accessibilityLabel ?? title}
-      accessibilityState={selected === undefined ? undefined : { selected }}
+      accessibilityHint={description}
+      accessibilityState={selection ? { checked: !!selected } : selected === undefined ? undefined : { selected }}
       onPress={onPress}
       style={[styles.row, selected && { backgroundColor: colors.brandSoft }]}
       pressedStyle={{ backgroundColor: colors.surfaceSunken }}
