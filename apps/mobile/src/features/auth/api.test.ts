@@ -1,6 +1,14 @@
 import { HttpAuthApi } from './api';
 import { z } from 'zod';
 const input = { email: 'pessoa@example.invalid', password: 'Senha-ficticia-34' };
+it('usa o contexto global ao chamar o fetch nativo do navegador', async () => {
+  const spy = jest.spyOn(globalThis, 'fetch').mockImplementation(function (this: typeof globalThis) {
+    if (this !== globalThis) throw new TypeError('Illegal invocation');
+    return Promise.resolve(new Response('{}', { status: 401 }));
+  });
+  try { await expect(new HttpAuthApi('https://api.example.invalid').login(input)).rejects.toMatchObject({ code: 'invalidCredentials' }); }
+  finally { spy.mockRestore(); }
+});
 it.each([401, 429, 503])('traduz HTTP %s sem exibir a mensagem interna do servidor', async (status) => {
   const fetcher: typeof fetch = () => Promise.resolve(new Response(JSON.stringify({ error: { code: 'INTERNAL', message: 'Detalhe interno' } }), { status }));
   const api = new HttpAuthApi('https://api.example.invalid', fetcher);
