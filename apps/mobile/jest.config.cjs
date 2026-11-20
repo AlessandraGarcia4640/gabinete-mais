@@ -15,5 +15,5 @@ module.exports = {
     '^@gabinete-plus/shared$': '<rootDir>/../../packages/shared/src/index.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-  transformIgnorePatterns: ['node_modules/(?!(?:\\.pnpm|(?:jest-)?react-native(?:-.*)?|@react-native(?:-community)?|expo(?:-.*)?|@expo(?:/.*)?|@tanstack/.*|zustand|zod|react-hook-form|@hookform/.*|@react-navigation/.*)(?:/|$))'],
+  transformIgnorePatterns: ['node_modules/(?!(?:\\.pnpm|(?:jest-)?react-native(?:-.*)?|@react-native(?:-community)?|expo(?:-.*)?|@expo(?:/.*)?|@expo-google-fonts/.*|@tanstack/.*|zustand|zod|react-hook-form|@hookform/.*|@react-navigation/.*)(?:/|$))'],
 };

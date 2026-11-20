@@ -1,6 +1,7 @@
+import { AppText } from '../../components/app-text';
 import { useConnection } from './connection-gate';
 import { useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,10 +11,11 @@ import { Card } from '../../components/card';
 import { Button } from '../../components/button';
 import { TextField } from '../../components/text-field';
 import { strings } from '../../lib/strings';
-import { theme } from '../../lib/theme';
+import { createThemedStyles } from '../../providers/theme-provider';
 import { useSession, useSessionManager } from '../../providers/session-provider';
 import { authMessage } from './errors';
 export function LoginScreen() {
+  const styles = useStyles();
   const manager = useSessionManager(); const session = useSession(); const connection = useConnection();
   const [visible, setVisible] = useState(false); const [message, setMessage] = useState<string | null>(null);
   const form = useForm<LoginRequest>({ resolver: zodResolver(loginRequestSchema), defaultValues: { email: '', password: '' } });
@@ -26,8 +28,8 @@ export function LoginScreen() {
   }
   const notice = message ?? (session.errorCode ? strings.auth[session.errorCode] : null);
   return <AuthScreen><View style={styles.header}>
-    <Text style={styles.brand}>{strings.brand}</Text><Text accessibilityRole="header" style={styles.title}>{strings.auth.title}</Text>
-    <Text style={styles.description}>{strings.auth.subtitle}</Text>
+    <AppText variant="titleLg" style={styles.brand}>{strings.brand}</AppText><AppText variant="titleLg" accessibilityRole="header" style={styles.title}>{strings.auth.title}</AppText>
+    <AppText variant="caption" style={styles.description}>{strings.auth.subtitle}</AppText>
   </View><Card style={styles.form}>
     <Controller control={form.control} name="email" render={({ field, fieldState }) => <TextField label={strings.auth.email} value={field.value}
       onChangeText={field.onChange} onBlur={field.onBlur} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}
@@ -39,14 +41,14 @@ export function LoginScreen() {
       onSubmitEditing={() => { if (!login.isPending) void form.handleSubmit(submit)(); }}
       errorText={fieldState.error ? strings.auth.invalidPassword : undefined} />} />
     <Button label={visible ? strings.auth.hidePassword : strings.auth.showPassword} secondary disabled={login.isPending} onPress={() => setVisible(!visible)} />
-    {!!notice && <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{notice}</Text>}
+    {!!notice && <AppText variant="caption" accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{notice}</AppText>}
     <Button label={login.isPending ? strings.auth.submitting : strings.auth.submit} loading={login.isPending} onPress={() => void form.handleSubmit(submit)()} />
-  </Card>{connection && <Button label={strings.connection.change} secondary disabled={login.isPending} onPress={() => { void connection.reset().catch(() => setMessage(strings.connection.storageError)); }} />}<Text style={styles.footnote}>{strings.auth.invitation}</Text>
-    {Platform.OS === 'web' && <Text style={styles.footnote}>{strings.auth.webSession}</Text>}
+  </Card>{connection && <Button label={strings.connection.change} secondary disabled={login.isPending} onPress={() => { void connection.reset().catch(() => setMessage(strings.connection.storageError)); }} />}<AppText variant="caption" style={styles.footnote}>{strings.auth.invitation}</AppText>
+    {Platform.OS === 'web' && <AppText variant="caption" style={styles.footnote}>{strings.auth.webSession}</AppText>}
   </AuthScreen>;
 }
-const styles = StyleSheet.create({ header: { gap: 14 }, brand: { color: theme.primary, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  title: { color: theme.text, fontSize: 30, fontWeight: '700' }, description: { color: theme.muted, fontSize: 16, lineHeight: 24 },
+const useStyles = createThemedStyles((theme) => ({ header: { gap: 14 }, brand: { color: theme.colors.brandText },
+  title: { color: theme.colors.ink }, description: { color: theme.colors.inkMuted },
   form: { padding: 22, gap: 20, marginBottom: 0 },
-  error: { backgroundColor: theme.errorSurface, color: theme.danger, padding: 14, borderRadius: 10, fontSize: 14, lineHeight: 21 },
-  footnote: { color: theme.muted, fontSize: 13, textAlign: 'center', lineHeight: 20 } });
+  error: { backgroundColor: theme.colors.dangerSoft, color: theme.colors.danger, padding: 14, borderRadius: 10 },
+  footnote: { color: theme.colors.inkMuted, textAlign: 'center' } }));

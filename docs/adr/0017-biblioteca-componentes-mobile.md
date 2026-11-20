@@ -1,6 +1,6 @@
 # ADR 0017 — Biblioteca de componentes do aplicativo
 
-Status: aceita.
+Status: substituída pela [ADR 0022](./0022-redesign-design-system-mobile.md).
 
 Button e TextField já compartilhados são mantidos como controles base; Card, Choice, Checkbox, estados de feedback e Screen passam a compor a biblioteca em src/components. Há um ponto público de exportação e documentação junto ao código. As peças de apresentação genéricas não importam features, sessão, rede ou roteador. TaskCard/RoutineCard mantêm a apresentação de domínio, compostos sobre Card.
 

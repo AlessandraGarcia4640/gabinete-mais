@@ -1,5 +1,6 @@
+import { AppText } from '../../components/app-text';
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { Screen } from '../../components/screen';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,7 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { routineFrequencySchema, userIdParamsSchema, type Routine } from '@gabinete-plus/shared';
 import { useSession } from '../../providers/session-provider';
 import { strings } from '../../lib/strings';
-import { theme } from '../../lib/theme';
+import { createThemedStyles } from '../../providers/theme-provider';
 import { Button } from '../../components/button';
 import { TextField } from '../../components/text-field';
 import { EmptyState, ErrorState, LoadingState } from '../../components/feedback';
@@ -18,6 +19,7 @@ import { routineError, useRoutine, useRoutineList, useRoutinesApi } from './hook
 import { Choice } from '../../components/choice';
 import { RoutineForm } from './form';
 export function RoutineListScreen() {
+  const styles = useStyles();
   const params = useLocalSearchParams(); const router = useRouter(); const { user } = useSession(); const day = useGabineteDate();
   const [mode, setMode] = useState<'all' | 'today' | 'archived'>(params.scope === 'today' ? 'today' : 'all');
   const [input, setInput] = useState(''); const [q, setQ] = useState(''); const [frequency, setFrequency] = useState<Routine['frequency'] | ''>('');
@@ -40,6 +42,7 @@ export function RoutineListScreen() {
   </Screen>;
 }
 export function RoutineDetailScreen() {
+  const styles = useStyles();
   const params = useLocalSearchParams(); const valid = userIdParamsSchema.safeParse({ id: params.id }); const id = valid.success ? valid.data.id : undefined;
   const query = useRoutine(id); const { user } = useSession(); const api = useRoutinesApi(); const router = useRouter(); const client = useQueryClient();
   const [confirm, setConfirm] = useState(false); const [message, setMessage] = useState<string | null>(null);
@@ -48,44 +51,45 @@ export function RoutineDetailScreen() {
   }, onError: (error) => { setMessage(routineError(error)); void client.invalidateQueries({ queryKey: ['routine', id] }); } });
   if (!valid.success) return <EmptyState message={strings.routines.notFound} />;
   if (query.isPending) return <LoadingState />;
-  if (query.isError) return <View><Text style={styles.error}>{routineError(query.error)}</Text><ErrorState retry={() => void query.refetch()} /></View>;
+  if (query.isError) return <View><AppText variant="caption" style={styles.error}>{routineError(query.error)}</AppText><ErrorState retry={() => void query.refetch()} /></View>;
   const routine = query.data;
-  const header = <View style={styles.header}><Text accessibilityRole="header" style={styles.title}>{routine.title}</Text>
-    <Text style={styles.text}>{routine.category} · {strings.dashboard.frequency[routine.frequency]}</Text>
-    {routine.isArchived && <Text style={styles.error}>{strings.routines.archivedLabel}</Text>}
-    <Text style={styles.label}>{strings.routines.description}</Text><Text style={styles.text}>{routine.description}</Text>
-    <Text style={styles.label}>{strings.routines.instructions}</Text><Text style={styles.text}>{routine.instructions}</Text>
-    <Text style={styles.label}>{strings.routines.frequencyDetails}</Text><Text style={styles.text}>{routine.frequencyDetails}</Text>
-    {routine.specificDate && <Text style={styles.text}>{strings.routines.specificDate}: {displayDate(routine.specificDate)}</Text>}
-    <Text style={styles.text}>{strings.routines.defaultPosition}: {routine.defaultPosition ? strings.routines.positions[routine.defaultPosition] : strings.routines.noPosition}</Text>
-    <Text style={styles.text}>{strings.routines.essential}: {routine.essentialForTransition ? strings.routines.yes : strings.routines.no}</Text>
+  const header = <View style={styles.header}><AppText variant="titleLg" accessibilityRole="header" style={styles.title}>{routine.title}</AppText>
+    <AppText variant="body" style={styles.text}>{routine.category} · {strings.dashboard.frequency[routine.frequency]}</AppText>
+    {routine.isArchived && <AppText variant="caption" style={styles.error}>{strings.routines.archivedLabel}</AppText>}
+    <AppText variant="bodyStrong" style={styles.label}>{strings.routines.description}</AppText><AppText variant="body" style={styles.text}>{routine.description}</AppText>
+    <AppText variant="bodyStrong" style={styles.label}>{strings.routines.instructions}</AppText><AppText variant="body" style={styles.text}>{routine.instructions}</AppText>
+    <AppText variant="bodyStrong" style={styles.label}>{strings.routines.frequencyDetails}</AppText><AppText variant="body" style={styles.text}>{routine.frequencyDetails}</AppText>
+    {routine.specificDate && <AppText variant="body" style={styles.text}>{strings.routines.specificDate}: {displayDate(routine.specificDate)}</AppText>}
+    <AppText variant="body" style={styles.text}>{strings.routines.defaultPosition}: {routine.defaultPosition ? strings.routines.positions[routine.defaultPosition] : strings.routines.noPosition}</AppText>
+    <AppText variant="body" style={styles.text}>{strings.routines.essential}: {routine.essentialForTransition ? strings.routines.yes : strings.routines.no}</AppText>
     <Button label={strings.checklists.models} secondary onPress={() => router.push({ pathname: '/checklists', params: { routineId: routine.id } })} />
     {user?.role === 'CHEFE' && !routine.isArchived && <Button label={strings.checklists.create} onPress={() => router.push({ pathname: '/checklist/nova', params: { routineId: routine.id } })} />}
-    <Text style={styles.label}>{strings.routines.steps}</Text></View>;
+    <AppText variant="bodyStrong" style={styles.label}>{strings.routines.steps}</AppText></View>;
   return <Screen><FlashList data={routine.steps.map((text, index) => ({ text, index }))} keyExtractor={(step) => String(step.index)} contentContainerStyle={styles.content}
-    ListHeaderComponent={header} renderItem={({ item }) => <View style={styles.step}><Text style={styles.label}>{strings.routines.step(item.index)}</Text><Text style={styles.text}>{item.text}</Text></View>}
-    ListEmptyComponent={<Text>{strings.routines.noSteps}</Text>}
-    ListFooterComponent={<View style={styles.footer}>{!!message && <Text accessibilityRole="alert" style={styles.error}>{message}</Text>}
+    ListHeaderComponent={header} renderItem={({ item }) => <View style={styles.step}><AppText variant="bodyStrong" style={styles.label}>{strings.routines.step(item.index)}</AppText><AppText variant="body" style={styles.text}>{item.text}</AppText></View>}
+    ListEmptyComponent={<AppText variant="body">{strings.routines.noSteps}</AppText>}
+    ListFooterComponent={<View style={styles.footer}>{!!message && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{message}</AppText>}
       {user?.role === 'CHEFE' && !routine.isArchived && <><Button label={strings.routines.edit} disabled={archive.isPending} onPress={() => router.push({ pathname: '/rotina/[id]/editar', params: { id: routine.id } })} />
         {!confirm ? <Button label={strings.routines.archive} secondary onPress={() => { setMessage(null); setConfirm(true); }} /> : <View style={styles.footer}>
-          <Text style={styles.label}>{strings.routines.archiveTitle}</Text><Text style={styles.text}>{strings.routines.archiveDescription}</Text>
+          <AppText variant="bodyStrong" style={styles.label}>{strings.routines.archiveTitle}</AppText><AppText variant="body" style={styles.text}>{strings.routines.archiveDescription}</AppText>
           <Button label={archive.isPending ? strings.routines.archiving : strings.routines.confirmArchive} loading={archive.isPending} onPress={() => archive.mutate()} />
           <Button label={strings.routines.cancel} secondary disabled={archive.isPending} onPress={() => setConfirm(false)} /></View>}</>}
     </View>} /></Screen>;
 }
 export function RoutineFormScreen({ mode }: { mode: 'create' | 'edit' }) {
+  const styles = useStyles();
   const { user } = useSession(); const router = useRouter(); const params = useLocalSearchParams();
   const valid = userIdParamsSchema.safeParse({ id: params.id }); const id = mode === 'edit' && valid.success ? valid.data.id : undefined;
   const query = useRoutine(user?.role === 'CHEFE' ? id : undefined);
   if (user?.role !== 'CHEFE') return <EmptyState message={strings.routines.forbidden} />;
   if (mode === 'edit' && !valid.success) return <EmptyState message={strings.routines.notFound} />;
   if (mode === 'edit' && query.isPending) return <LoadingState />;
-  if (mode === 'edit' && query.isError) return <View><Text style={styles.error}>{routineError(query.error)}</Text><ErrorState retry={() => void query.refetch()} /></View>;
+  if (mode === 'edit' && query.isError) return <View><AppText variant="caption" style={styles.error}>{routineError(query.error)}</AppText><ErrorState retry={() => void query.refetch()} /></View>;
   if (mode === 'edit' && query.data?.isArchived) return <EmptyState message={strings.routines.archivedError} />;
   return <RoutineForm key={id ?? 'new'} routine={mode === 'edit' ? query.data : undefined}
     onSaved={(routine) => router.replace({ pathname: '/rotina/[id]', params: { id: routine.id } })}
     onCancel={() => { if (id) router.replace({ pathname: '/rotina/[id]', params: { id } }); else router.replace('/rotinas'); }} />;
 }
-const styles = StyleSheet.create({ content: { padding: 20 }, header: { gap: 16, paddingBottom: 20 },
-  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, title: { fontSize: 25, fontWeight: '700', color: theme.text }, label: { fontSize: 16, fontWeight: '600', color: theme.text },
-  text: { fontSize: 15, lineHeight: 23, color: theme.muted }, error: { color: theme.danger, padding: 16 }, footer: { paddingVertical: 20, gap: 16 }, step: { marginBottom: 20, gap: 8 } });
+const useStyles = createThemedStyles((theme) => ({ content: { padding: 20 }, header: { gap: 16, paddingBottom: 20 },
+  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, title: { color: theme.colors.ink }, label: { color: theme.colors.ink },
+  text: { color: theme.colors.inkMuted }, error: { color: theme.colors.danger, padding: 16 }, footer: { paddingVertical: 20, gap: 16 }, step: { marginBottom: 20, gap: 8 } }));

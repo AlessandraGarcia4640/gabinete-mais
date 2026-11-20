@@ -1,20 +1,21 @@
-import { StyleSheet, Text } from 'react-native';
+import { AppText } from '../../components/app-text';
 import { Card } from '../../components/card';
 import { useMutation } from '@tanstack/react-query';
 import { AuthScreen } from '../../components/auth-screen';
 import { Button } from '../../components/button';
 import { useSession, useSessionManager } from '../../providers/session-provider';
 import { strings } from '../../lib/strings';
-import { theme } from '../../lib/theme';
+import { createThemedStyles } from '../../providers/theme-provider';
 export function SessionScreen() {
+  const styles = useStyles();
   const { user } = useSession(); const manager = useSessionManager();
   const logout = useMutation({ mutationFn: () => manager.logout(), retry: false });
   if (!user) return null;
-  return <AuthScreen><Text style={styles.brand}>{strings.brand}</Text><Card style={styles.profile}>
-    <Text style={styles.description}>{strings.session.welcome}</Text><Text accessibilityRole="header" style={styles.title}>{user.name}</Text>
-    <Text style={styles.description}>{strings.session.description}</Text><Text style={styles.label}>{strings.session.profile}</Text>
-    <Text style={styles.role}>{strings.session.roles[user.role]}</Text>
+  return <AuthScreen><AppText variant="titleLg" style={styles.brand}>{strings.brand}</AppText><Card style={styles.profile}>
+    <AppText variant="caption" style={styles.description}>{strings.session.welcome}</AppText><AppText variant="titleLg" accessibilityRole="header" style={styles.title}>{user.name}</AppText>
+    <AppText variant="caption" style={styles.description}>{strings.session.description}</AppText><AppText variant="bodyStrong" style={styles.label}>{strings.session.profile}</AppText>
+    <AppText variant="heading" style={styles.role}>{strings.session.roles[user.role]}</AppText>
   </Card><Button label={logout.isPending ? strings.session.leaving : strings.session.logout} secondary loading={logout.isPending} onPress={() => logout.mutate()} /></AuthScreen>;
 }
-const styles = StyleSheet.create({ brand: { color: theme.primary, fontSize: 28, fontWeight: '800' }, profile: { padding: 24, gap: 16, marginBottom: 0 },
-  title: { color: theme.text, fontSize: 28, fontWeight: '700' }, description: { color: theme.muted, fontSize: 16, lineHeight: 24 }, label: { color: theme.muted, fontSize: 13 }, role: { color: theme.primary, fontSize: 18, fontWeight: '600' } });
+const useStyles = createThemedStyles((theme) => ({ brand: { color: theme.colors.brandText }, profile: { padding: 24, gap: 16, marginBottom: 0 },
+  title: { color: theme.colors.ink }, description: { color: theme.colors.inkMuted }, label: { color: theme.colors.inkMuted }, role: { color: theme.colors.brandText } }));

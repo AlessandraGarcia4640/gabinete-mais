@@ -1,10 +1,17 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { AppText } from './app-text';
+import { ActivityIndicator, View } from 'react-native';
 import { strings } from '../lib/strings';
-import { theme } from '../lib/theme';
+import { createThemedStyles, useTheme } from '../providers/theme-provider';
 import { Button } from './button';
-export function LoadingState({ message = strings.feedback.loading }: { message?: string }) { return <View style={styles.state} accessibilityState={{ busy: true }}><ActivityIndicator color={theme.primary} /><Text accessibilityLiveRegion="polite" style={styles.description}>{message}</Text></View>; }
-export function EmptyState({ message }: { message: string }) { return <View style={styles.state}><Text style={styles.description}>{message}</Text></View>; }
+export function LoadingState({ message = strings.feedback.loading }: { message?: string }) {
+  const styles = useStyles();
+  const theme = useTheme();
+  return <View style={styles.state} accessibilityState={{ busy: true }}><ActivityIndicator color={theme.colors.brand} /><AppText variant="caption" accessibilityLiveRegion="polite" style={styles.description}>{message}</AppText></View>; }
+export function EmptyState({ message }: { message: string }) {
+  const styles = useStyles();
+  return <View style={styles.state}><AppText variant="caption" style={styles.description}>{message}</AppText></View>; }
 export function ErrorState({ retry, updating = false, message }: { retry: () => void; updating?: boolean; message?: string }) {
-  return <View style={styles.state}><Text accessibilityRole="alert" style={styles.error}>{message ?? (updating ? strings.feedback.updatingError : strings.feedback.error)}</Text><Button label={strings.feedback.retry} secondary onPress={retry} /></View>;
+  const styles = useStyles();
+  return <View style={styles.state}><AppText variant="caption" accessibilityRole="alert" style={styles.error}>{message ?? (updating ? strings.feedback.updatingError : strings.feedback.error)}</AppText><Button label={strings.feedback.retry} secondary onPress={retry} /></View>;
 }
-const styles = StyleSheet.create({ state: { padding: 20, gap: 16, alignItems: 'center' }, description: { color: theme.muted, fontSize: 14, lineHeight: 21 }, error: { color: theme.danger, fontSize: 14, fontWeight: '600' } });
+const useStyles = createThemedStyles((theme) => ({ state: { padding: 20, gap: 16, alignItems: 'center' }, description: { color: theme.colors.inkMuted }, error: { color: theme.colors.danger } }));

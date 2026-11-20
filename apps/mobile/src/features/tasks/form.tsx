@@ -1,5 +1,6 @@
+import { AppText } from '../../components/app-text';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { Screen } from '../../components/screen';
 import { FlashList } from '@shopify/flash-list';
 import { Controller, useForm } from 'react-hook-form';
@@ -15,8 +16,9 @@ import { taskError, useTasksApi } from './hooks';
 import { initialTaskValues, taskChanges, taskFormSchema, taskPayload, type TaskFormValues } from './model';
 import { ResourcePicker } from './picker';
 import type { ResourceKind, ResourceOption } from './api';
-import { styles } from './styles';
+import { useStyles } from './styles';
 export function TaskForm({ task, onSaved, onCancel }: { task?: Task; onSaved: (task: Task) => void; onCancel: () => void }) {
+  const styles = useStyles();
   const [baseline] = useState(task); const [message, setMessage] = useState<string | null>(null); const [discard, setDiscard] = useState(false); const [picker, setPicker] = useState<ResourceKind | null>(null);
   const { user } = useSession(); const manager = useSessionManager(); const api = useTasksApi(); const client = useQueryClient();
   const [labels, setLabels] = useState<Record<ResourceKind, string | null>>({ person: user?.name ?? strings.tasks.personUnknown, routine: null, contact: null, run: null });
@@ -48,17 +50,17 @@ export function TaskForm({ task, onSaved, onCancel }: { task?: Task; onSaved: (t
       renderItem={({ item }) => <View style={styles.section}><Controller control={form.control} name={item} render={({ field, fieldState }) => <TextField label={item === 'title' ? strings.tasks.name : strings.tasks[item]}
         value={typeof field.value === 'string' ? field.value : ''} onChangeText={field.onChange} onBlur={field.onBlur} editable={!busy} multiline={item === 'description' || item === 'instructions'} placeholder={item === 'dueDate' ? strings.routines.datePlaceholder : undefined}
         errorText={fieldState.error ? strings.tasks.validation[item] : undefined} />} /></View>}
-      ListFooterComponent={<View style={styles.section}><Text style={styles.label}>{strings.tasks.priority}</Text><Controller control={form.control} name="priority" render={({ field }) => <View style={styles.choices}>{taskPrioritySchema.options.map((value) => <Choice key={value} label={strings.dashboard.priority[value]} selected={field.value === value} disabled={busy} onPress={() => field.onChange(value)} />)}</View>} />
-        {baseline ? <Text>{strings.tasks.linksFixed}</Text> : <><Text>{strings.tasks.inheritance}</Text><Text style={styles.label}>{strings.tasks.assignee}</Text><Text>{labels.person}</Text>
+      ListFooterComponent={<View style={styles.section}><AppText variant="bodyStrong" style={styles.label}>{strings.tasks.priority}</AppText><Controller control={form.control} name="priority" render={({ field }) => <View style={styles.choices}>{taskPrioritySchema.options.map((value) => <Choice key={value} label={strings.dashboard.priority[value]} selected={field.value === value} disabled={busy} onPress={() => field.onChange(value)} />)}</View>} />
+        {baseline ? <AppText variant="body">{strings.tasks.linksFixed}</AppText> : <><AppText variant="body">{strings.tasks.inheritance}</AppText><AppText variant="bodyStrong" style={styles.label}>{strings.tasks.assignee}</AppText><AppText variant="body">{labels.person}</AppText>
           {user?.role === 'CHEFE' && <Button label={strings.tasks.selectPerson} secondary disabled={busy} onPress={() => setPicker('person')} />}
           {!!user && assigneeId !== user.id && <Button label={strings.tasks.self} secondary disabled={busy} onPress={() => select('person', { id: user.id, label: user.name })} />}
-          {(['routine', 'contact', 'run'] satisfies ('routine' | 'contact' | 'run')[]).map((kind) => <View key={kind} style={styles.section}><Text style={styles.label}>{strings.tasks[kind]}</Text><Text>{labels[kind] ?? strings.tasks.noLink}</Text>
+          {(['routine', 'contact', 'run'] satisfies ('routine' | 'contact' | 'run')[]).map((kind) => <View key={kind} style={styles.section}><AppText variant="bodyStrong" style={styles.label}>{strings.tasks[kind]}</AppText><AppText variant="body">{labels[kind] ?? strings.tasks.noLink}</AppText>
             <Button label={kind === 'routine' ? strings.tasks.selectRoutine : kind === 'contact' ? strings.tasks.selectContact : strings.tasks.selectRun} secondary disabled={busy} onPress={() => setPicker(kind)} />
             {!!labels[kind] && <Button label={strings.tasks.clearLink} secondary disabled={busy} onPress={() => clear(kind)} />}</View>)}</>}
-        {!!message && <Text accessibilityRole="alert" style={styles.error}>{message}</Text>}
+        {!!message && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{message}</AppText>}
         <Button label={strings.routines.save} loading={busy} disabled={!!baseline && !dirty} onPress={() => void form.handleSubmit(submit)()} />
         <Button label={strings.routines.cancel} secondary disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
-        {discard && <><Text>{strings.routines.unsavedTitle}</Text><Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} secondary onPress={() => setDiscard(false)} /></>}
+        {discard && <><AppText variant="body">{strings.routines.unsavedTitle}</AppText><Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} secondary onPress={() => setDiscard(false)} /></>}
       </View>} />
     {!!picker && <ResourcePicker kind={picker} assigneeId={assigneeId} routineId={routineId} onSelect={(option) => select(picker, option)} onClose={() => setPicker(null)} />}
   </Screen>;

@@ -1,12 +1,53 @@
-import { theme } from './theme';
+import { themes, type ColorTokens } from './theme';
+
 function luminance(color: string) {
-  const linear = (start: number) => { const value = parseInt(color.slice(start, start + 2), 16) / 255; return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4; };
+  function linear(start: number) {
+    const channel = Number.parseInt(color.slice(start, start + 2), 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  }
   return 0.2126 * linear(1) + 0.7152 * linear(3) + 0.0722 * linear(5);
 }
-function contrast(a: string, b: string) { const x = luminance(a); const y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
-it('cálculo usa luminância relativa, com referências preto/branco', () => { expect(contrast('#000000', '#FFFFFF')).toBe(21); expect(contrast('#FFFFFF', '#FFFFFF')).toBe(1); });
-it('texto e estados pressionados preservam contraste mínimo 4,5:1', () => {
-  for (const foreground of [theme.text, theme.muted, theme.primary, theme.danger]) for (const background of [theme.surface, theme.background, theme.surfacePressed]) expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
-  expect(contrast(theme.surface, theme.primary)).toBeGreaterThanOrEqual(4.5); expect(contrast(theme.surface, theme.primaryPressed)).toBeGreaterThanOrEqual(4.5); expect(contrast(theme.danger, theme.errorSurface)).toBeGreaterThanOrEqual(4.5);
+
+function contrast(foreground: string, background: string) {
+  const a = luminance(foreground);
+  const b = luminance(background);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+type ContrastPair = [foreground: keyof ColorTokens, background: keyof ColorTokens];
+
+const textPairs: ContrastPair[] = [
+  ['ink', 'bg'], ['ink', 'surface'], ['ink', 'surfaceSunken'], ['ink', 'surfaceRaised'], ['ink', 'brandSoft'],
+  ['inkMuted', 'bg'], ['inkMuted', 'surface'], ['inkMuted', 'surfaceSunken'],
+  ['inkSubtle', 'bg'], ['inkSubtle', 'surface'],
+  ['brandText', 'bg'], ['brandText', 'surface'], ['brandText', 'brandSoft'],
+  ['onBrand', 'brand'], ['onBrand', 'brandHover'], ['onAccent', 'accent'],
+  ['accentText', 'bg'], ['accentText', 'surface'], ['accentText', 'accentSoft'],
+  ['success', 'surface'], ['success', 'successSoft'],
+  ['danger', 'bg'], ['danger', 'surface'], ['danger', 'dangerSoft'], ['onDanger', 'danger'],
+  ['info', 'surface'], ['info', 'infoSoft'],
+  ['statusAberta', 'infoSoft'], ['statusAndamento', 'accentSoft'],
+  ['statusConcluida', 'successSoft'], ['statusCancelada', 'surfaceSunken'],
+  ['prioridadeUrgente', 'surface'], ['prioridadeAlta', 'surface'],
+  ['prioridadeNormal', 'surface'], ['prioridadeBaixa', 'surface'],
+];
+
+const controlPairs: ContrastPair[] = [
+  ['borderStrong', 'bg'], ['borderStrong', 'surface'],
+  ['focus', 'bg'], ['focus', 'surface'],
+];
+
+it('calcula contraste pelas luminâncias relativas', () => {
+  expect(contrast('#000000', '#FFFFFF')).toBe(21);
+  expect(contrast('#FFFFFF', '#FFFFFF')).toBe(1);
 });
-it('bordas identificadoras dos controles preservam contraste mínimo 3:1', () => { for (const background of [theme.surface, theme.background, theme.surfacePressed]) expect(contrast(theme.border, background)).toBeGreaterThanOrEqual(3); });
+
+describe.each(Object.values(themes))('contraste do tema $name', ({ colors }) => {
+  it.each(textPairs)('%s sobre %s atinge 4,5:1', (foreground, background) => {
+    expect(contrast(colors[foreground], colors[background])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(controlPairs)('%s sobre %s atinge 3:1', (foreground, background) => {
+    expect(contrast(colors[foreground], colors[background])).toBeGreaterThanOrEqual(3);
+  });
+});
