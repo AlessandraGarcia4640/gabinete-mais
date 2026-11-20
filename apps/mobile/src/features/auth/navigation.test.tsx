@@ -43,7 +43,7 @@ beforeEach(async () => { await SecureStore.deleteItemAsync('test-reset'); });
 afterEach(cleanup);
 function authResponse(role: 'CHEFE' | 'ASSESSOR') { return loginResponseSchema.parse({ accessToken: 'access-ficticio', refreshToken: 'A'.repeat(43), refreshExpiresAt: '2099-01-01T00:00:00Z', tokenType: 'Bearer', expiresIn: 900, user: { id: 'actor', name: 'Pessoa Fictícia', email: 'pessoa@example.invalid', role, isActive: true } }); }
 async function enter() {
-  await screen.findByRole('button', { name: strings.auth.submit }); fireEvent.changeText(screen.getByLabelText(strings.auth.email), 'pessoa@example.invalid'); fireEvent.changeText(screen.getByLabelText(strings.auth.password), 'Senha-ficticia-42'); fireEvent.press(screen.getByRole('button', { name: strings.auth.submit })); await screen.findByText('Pessoa Fictícia');
+  await screen.findByRole('button', { name: strings.auth.submit }); fireEvent.changeText(screen.getByLabelText(strings.auth.email), 'pessoa@example.invalid'); fireEvent.changeText(screen.getByLabelText(strings.auth.password), 'Senha-ficticia-42'); fireEvent.press(screen.getByRole('button', { name: strings.auth.submit })); await screen.findByRole('header', { name: strings.dashboard.greeting('Pessoa') });
 }
 async function leave() { fireEvent.press(screen.getByRole('button', { name: strings.session.logout })); await screen.findByRole('button', { name: strings.auth.submit }); }
 function renderApp(initialUrl = '/') { return renderRouter({ _layout: RootLayout, login: LoginScreen, '(tabs)/_layout': SessionLayout, '(tabs)/index': DashboardScreen,
@@ -68,11 +68,11 @@ it('rota privada abre login, sucesso navega para o gabinete e sair impede voltar
   });
   try {
     renderApp();
-    await screen.findByRole('button', { name: strings.auth.submit }); expect(screen.queryByText('Pessoa Fictícia')).toBeNull();
+    await screen.findByRole('button', { name: strings.auth.submit }); expect(screen.queryByRole('header', { name: strings.dashboard.greeting('Pessoa') })).toBeNull();
     fireEvent.changeText(screen.getByLabelText(strings.auth.email), 'pessoa@example.invalid');
     fireEvent.changeText(screen.getByLabelText(strings.auth.password), 'Senha-ficticia-34');
     fireEvent.press(screen.getByRole('button', { name: strings.auth.submit }));
-    await screen.findByText('Pessoa Fictícia'); expect(screen.queryByRole('button', { name: strings.auth.submit })).toBeNull();
+    await screen.findByRole('header', { name: strings.dashboard.greeting('Pessoa') }); expect(screen.queryByRole('button', { name: strings.auth.submit })).toBeNull();
     await screen.findByText(strings.dashboard.emptyTasks);
     fireEvent.press(screen.getByRole('tab', { name: strings.nav.routines }));
     fireEvent.press(await screen.findByRole('tab', { name: strings.nav.checklists }));
@@ -85,7 +85,7 @@ it('rota privada abre login, sucesso navega para o gabinete e sair impede voltar
     await screen.findByText(strings.session.roles.ASSESSOR);
     fireEvent.press(screen.getByRole('button', { name: strings.session.logout }));
     await screen.findByRole('button', { name: strings.auth.submit });
-    await waitFor(() => expect(screen.queryByText('Pessoa Fictícia')).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('header', { name: strings.dashboard.greeting('Pessoa') })).toBeNull());
   } finally {
     fetcher.mockRestore(); if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = previous;
   }
