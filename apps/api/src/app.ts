@@ -60,3 +60,5 @@ export const createApp = (loginService = new LoginService({
   app.use(errorHandler);
   return app;
 };
+
+export default createApp();
