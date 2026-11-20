@@ -1,5 +1,6 @@
-import { useState, type PropsWithChildren, type ReactNode } from 'react';
+import { useState, type PropsWithChildren, type ReactNode, type Ref } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { strings } from '../lib/strings';
 import { dimensions, iconSize, line, radius, size, spacing, typography } from '../lib/theme';
 import { createThemedStyles, useAppFonts, useTheme } from '../providers/theme-provider';
 import { AppText } from './app-text';
@@ -10,17 +11,22 @@ interface FieldMessages {
   label: string;
   help?: string;
   errorText?: string;
+  optional?: boolean;
 }
 
 interface TextFieldProps extends FieldMessages, TextInputProps {
   mono?: boolean;
   accessory?: ReactNode;
+  ref?: Ref<TextInput>;
 }
 
-export function FieldFrame({ label, help, errorText, children }: PropsWithChildren<FieldMessages>) {
+export function FieldFrame({ label, help, errorText, optional, children }: PropsWithChildren<FieldMessages>) {
   return (
     <View style={frameStyles.field}>
-      <AppText variant="label">{label}</AppText>
+      <AppText variant="label">
+        {label}
+        {optional && <AppText variant="caption" color="inkMuted">{strings.forms.optional}</AppText>}
+      </AppText>
       {children}
       {!!errorText && (
         <View style={frameStyles.error}>
@@ -35,17 +41,18 @@ export function FieldFrame({ label, help, errorText, children }: PropsWithChildr
   );
 }
 
-export function TextField({ label, help, errorText, style, mono, accessory, onFocus, onBlur, ...props }: TextFieldProps) {
+export function TextField({ label, help, errorText, optional, style, mono, accessory, ref, onFocus, onBlur, ...props }: TextFieldProps) {
   const styles = useStyles();
   const { colors } = useTheme();
   const fontsLoaded = useAppFonts();
   const [focused, setFocused] = useState(false);
   const ring = useFocusRing(focused);
   return (
-    <FieldFrame label={label} help={help} errorText={errorText}>
+    <FieldFrame label={label} help={help} errorText={errorText} optional={optional}>
       <View>
         <TextInput
           {...props}
+          ref={ref}
           allowFontScaling={props.allowFontScaling ?? true}
           accessibilityLabel={label}
           accessibilityState={{ disabled: props.editable === false }}

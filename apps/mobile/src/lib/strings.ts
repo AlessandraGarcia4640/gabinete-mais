@@ -1,5 +1,6 @@
 export const strings = {
   brand: 'Gabinete+',
+  forms: { optional: ' (opcional)' },
   nav: {
     home: 'Início', tasks: 'Tarefas', routines: 'Rotinas', cabinet: 'Gabinete', profile: 'Perfil',
     checklists: 'Checklists', executions: 'Execuções', contacts: 'Contatos', guidelines: 'Orientações', transition: 'Guia de transição',
@@ -19,6 +20,9 @@ export const strings = {
   feedback: { loading: 'Carregando informações…', error: 'Não foi possível carregar as informações.', errorHelp: 'Confira sua conexão e tente novamente.', retry: 'Tentar novamente', refresh: 'Atualizar', loadMore: 'Carregar mais', loadingMore: 'Carregando mais…', updatingError: 'Não foi possível atualizar. Tente novamente.', selectDetail: 'Selecione um item para ver os detalhes.' },
   tasks: {
     title: 'Tarefas', details: 'Detalhes da tarefa', create: 'Nova tarefa', edit: 'Editar tarefa', history: 'Histórico da tarefa', empty: 'Nenhuma tarefa encontrada.',
+    formHelp: 'Tarefa é pontual, com prazo e responsável. Para algo recorrente, cadastre uma rotina.',
+    instructionsPlaceholder: 'Passo a passo para quem vai executar',
+    personWithRole: (name: string, role: string) => `${name} · ${role}`,
     name: 'Título', description: 'Descrição', instructions: 'Orientações', dueDate: 'Prazo', priority: 'Prioridade', search: 'Buscar tarefas', mine: 'Minhas tarefas', all: 'Todas as tarefas', allStatuses: 'Todos os status', overdue: 'Somente em atraso',
     status: 'Status', everyStatus: 'Todos', everyPriority: 'Todas', scope: 'Escopo das tarefas',
     filters: 'Filtros', clearFilters: 'Limpar filtros', applyFilters: 'Aplicar filtros',

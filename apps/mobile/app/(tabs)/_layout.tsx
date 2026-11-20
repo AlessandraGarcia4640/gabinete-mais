@@ -9,6 +9,7 @@ import { TaskListScreen } from '../../src/features/tasks/screens';
 import { strings } from '../../src/lib/strings';
 import { breakpoint, spacing } from '../../src/lib/theme';
 import { MainNavigation } from '../../src/navigation/main-navigation';
+import { FormNavigationProvider } from '../../src/navigation/form-navigation-context';
 import { navigationPresentation, primaryDestinations, routeMetadata, type RoutineView } from '../../src/navigation/route-metadata';
 import { useTheme } from '../../src/providers/theme-provider';
 
@@ -81,7 +82,7 @@ export default function SessionLayout() {
           <TabTrigger key={id} name={id} href={href} asChild><TabRegistration /></TabTrigger>
         ))}
       </TabList>
-      <AuthenticatedShell />
+      <FormNavigationProvider><AuthenticatedShell /></FormNavigationProvider>
     </Tabs>
   );
 }

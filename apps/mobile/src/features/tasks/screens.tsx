@@ -6,6 +6,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { userIdParamsSchema, type TaskEventPage } from '@gabinete-plus/shared';
 import { Button } from '../../components/button';
+import { AppBar } from '../../components/app-bar';
 import { strings } from '../../lib/strings';
 import { useSession } from '../../providers/session-provider';
 import { LoadingState, EmptyState, ErrorState } from '../../components/feedback';
@@ -22,14 +23,24 @@ export function TaskDetailScreen() {
 }
 
 export function TaskFormScreen({ mode }: { mode: 'create' | 'edit' }) {
-  const styles = useStyles();
   const id = useId(); const { user } = useSession(); const query = useTask(mode === 'edit' ? id : undefined); const router = useRouter();
-  if (mode === 'edit' && !id) return <EmptyState message={strings.tasks.notFound} />;
-  if (mode === 'edit' && query.isPending) return <LoadingState />;
-  if (mode === 'edit' && query.isError) return <View><AppText variant="caption" style={styles.error}>{taskError(query.error)}</AppText><ErrorState retry={() => void query.refetch()} /></View>;
-  if (mode === 'edit' && query.data && !taskActions(query.data, user).edit) return <EmptyState message={query.data.status === 'CONCLUIDA' || query.data.status === 'CANCELADA' ? strings.tasks.closed : strings.tasks.forbidden} />;
-  return <TaskForm key={mode === 'edit' ? id : 'new'} task={mode === 'edit' ? query.data : undefined} onSaved={(saved) => router.replace({ pathname: '/tarefa/[id]', params: { id: saved.id } })}
-    onCancel={() => { if (mode === 'edit' && id) router.replace({ pathname: '/tarefa/[id]', params: { id } }); else router.replace('/tarefas'); }} />;
+  const cancel = () => {
+    if (mode === 'edit' && id) router.replace({ pathname: '/tarefa/[id]', params: { id } });
+    else router.replace('/tarefas');
+  };
+  if (mode === 'edit') {
+    const header = <AppBar title={strings.tasks.edit} onBack={cancel} />;
+    if (!id) return <Screen>{header}<EmptyState message={strings.tasks.notFound} /></Screen>;
+    if (query.isPending) return <Screen>{header}<LoadingState /></Screen>;
+    if (query.isError) return <Screen>{header}<ErrorState message={taskError(query.error)} retry={() => void query.refetch()} /></Screen>;
+    if (!taskActions(query.data, user).edit) return (
+      <Screen>{header}
+        <EmptyState message={query.data.status === 'CONCLUIDA' || query.data.status === 'CANCELADA' ? strings.tasks.closed : strings.tasks.forbidden} />
+      </Screen>
+    );
+  }
+  return <TaskForm key={mode === 'edit' ? id : 'new'} task={mode === 'edit' ? query.data : undefined} guardNavigation
+    onSaved={(saved) => router.replace({ pathname: '/tarefa/[id]', params: { id: saved.id } })} onCancel={cancel} />;
 }
 export function TaskHistoryScreen() {
   const styles = useStyles();

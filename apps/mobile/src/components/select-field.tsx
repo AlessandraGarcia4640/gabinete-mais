@@ -1,4 +1,5 @@
-import { StyleSheet } from 'react-native';
+import type { ReactNode, Ref } from 'react';
+import { StyleSheet, type View } from 'react-native';
 import { iconSize, line, radius, size, spacing } from '../lib/theme';
 import { useTheme } from '../providers/theme-provider';
 import { AppText } from './app-text';
@@ -15,17 +16,23 @@ interface SelectFieldProps {
   disabled?: boolean;
   help?: string;
   errorText?: string;
+  optional?: boolean;
+  start?: ReactNode;
+  accessibilityLabel?: string;
+  ref?: Ref<View>;
 }
 
 export function SelectField({
   label, value, placeholder, onPress, expanded = false, disabled = false, help, errorText,
+  optional, start, accessibilityLabel, ref,
 }: SelectFieldProps) {
   const { colors } = useTheme();
   return (
-    <FieldFrame label={label} help={help} errorText={errorText}>
+    <FieldFrame label={label} help={help} errorText={errorText} optional={optional}>
       <Control
+        ref={ref}
         accessibilityRole="button"
-        accessibilityLabel={label}
+        accessibilityLabel={accessibilityLabel ?? label}
         accessibilityHint={errorText ?? help}
         accessibilityValue={{ text: value ?? placeholder }}
         accessibilityState={{ expanded, disabled }}
@@ -38,6 +45,7 @@ export function SelectField({
         }]}
         pressedStyle={{ backgroundColor: colors.surfaceSunken }}
       >
+        {start}
         <AppText variant="body" color={value ? 'ink' : 'inkSubtle'} style={styles.value}>{value ?? placeholder}</AppText>
         <Icon name="chevron-down" size={iconSize.small} color="inkMuted" />
       </Control>

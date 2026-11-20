@@ -9,6 +9,7 @@ import { dimensions, iconSize, line, radius, size, spacing, typography } from '.
 import { useSession } from '../providers/session-provider';
 import { useTheme } from '../providers/theme-provider';
 import { BrandMark } from './brand-mark';
+import { useFormNavigationRequest } from './form-navigation-context';
 import { destinations, primaryDestinations, sidebarDestinations, type Destination } from './route-metadata';
 
 type Presentation = 'bar' | 'rail' | 'sidebar';
@@ -67,6 +68,12 @@ export function MainNavigation({ presentation, active, pathname }: MainNavigatio
   const { colors } = useTheme();
   const router = useRouter();
   const { user } = useSession();
+  const request = useFormNavigationRequest();
+  const navigate = (destination: Destination) => {
+    const proceed = () => router.navigate(destination.href);
+    if (request?.current) request.current(proceed);
+    else proceed();
+  };
   const profilePage = { 'aria-current': active === 'profile' ? 'page' : undefined };
   const compactItems = primaryDestinations.map((destination) => (
     <TabTrigger
@@ -75,9 +82,9 @@ export function MainNavigation({ presentation, active, pathname }: MainNavigatio
       asChild
       reset="always"
       onPress={(event) => {
-        if (active === destination.id && pathname !== destination.href) {
+        if (request?.current || (active === destination.id && pathname !== destination.href)) {
           event?.preventDefault();
-          router.navigate(destination.href);
+          navigate(destination);
         }
       }}
     >
@@ -114,7 +121,7 @@ export function MainNavigation({ presentation, active, pathname }: MainNavigatio
             destination={destination}
             presentation="sidebar"
             active={destination.id === active}
-            onPress={() => router.navigate(destination.href)}
+            onPress={() => navigate(destination)}
           />
         )) : <View accessibilityRole="tablist" accessibilityLabel={strings.nav.main} style={styles.railItems}>{compactItems}</View>}
       </ScrollView>
@@ -124,7 +131,7 @@ export function MainNavigation({ presentation, active, pathname }: MainNavigatio
           accessibilityRole="link"
           accessibilityLabel={strings.nav.profile}
           accessibilityState={{ selected: active === 'profile' }}
-          onPress={() => router.navigate(destinations.profile.href)}
+          onPress={() => navigate(destinations.profile)}
           style={[
             styles.profile,
             active === 'profile' && { backgroundColor: colors.brandSoft },

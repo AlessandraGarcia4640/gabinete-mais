@@ -139,8 +139,44 @@ it('cadastro pela chefia vincula responsável, rotina, contato e checklist compa
 });
 it('edição limpa orientações e prazo por PATCH mínimo', async () => {
   const saved = jest.fn(); const task = taskFixture({ instructions: 'Original', dueDate: '2026-10-12' }); fetcher.mockImplementation(() => response(taskFixture({ instructions: '', dueDate: null })));
-  fixture.show(<TaskForm task={task} onSaved={saved} onCancel={() => undefined} />); fireEvent.changeText(screen.getByLabelText(strings.tasks.instructions), ''); fireEvent.changeText(screen.getByLabelText(strings.tasks.dueDate), ''); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  fixture.show(<TaskForm task={task} onSaved={saved} onCancel={() => undefined} />);
+  expect(screen.getByText(strings.tasks.linksFixed)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: strings.tasks.selectRoutine })).toBeNull();
+  fireEvent.changeText(screen.getByLabelText(strings.tasks.instructions), ''); fireEvent.changeText(screen.getByLabelText(strings.tasks.dueDate), ''); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
   await waitFor(() => expect(saved).toHaveBeenCalled()); expect(updateTaskSchema.parse(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)))).toEqual({ instructions: '', dueDate: null });
+});
+it('voltar e cancelar preservam o rascunho até o descarte ser confirmado', () => {
+  const cancel = jest.fn();
+  fixture.show(<TaskForm onSaved={() => undefined} onCancel={cancel} />);
+  fireEvent.changeText(screen.getByLabelText(strings.tasks.name), 'Rascunho fictício');
+  fireEvent.press(screen.getByRole('button', { name: strings.nav.back }));
+  expect(screen.getByRole('header', { name: strings.routines.unsavedTitle })).toBeTruthy();
+  expect(cancel).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.continueEditing }));
+  expect(screen.getByLabelText(strings.tasks.name).props.value).toBe('Rascunho fictício');
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.cancel }));
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.discard }));
+  expect(cancel).toHaveBeenCalledTimes(1);
+  expect(fetcher).not.toHaveBeenCalled();
+});
+it('retirar a rotina pela folha também retira a execução vinculada do envio', async () => {
+  const saved = jest.fn();
+  fetcher.mockImplementation((url, init) => {
+    if (init?.method === 'POST') return response(taskFixture());
+    const path = new URL(String(url));
+    return response({ items: path.pathname === '/routines' ? [routineFixture()] : [runFixture()], nextCursor: null });
+  });
+  fixture.show(<TaskForm onSaved={saved} onCancel={() => undefined} />);
+  fireEvent.changeText(screen.getByLabelText(strings.tasks.name), 'Tarefa sem vínculos');
+  fireEvent.press(screen.getByRole('button', { name: strings.tasks.selectRun }));
+  fireEvent.press(await screen.findByRole('button', { name: /Checklist fictício/ }));
+  expect(screen.getByText('Rotina fictícia')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: strings.tasks.selectRoutine }));
+  fireEvent.press(await screen.findByRole('button', { name: strings.tasks.noLink }));
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  await waitFor(() => expect(saved).toHaveBeenCalled());
+  const write = fetcher.mock.calls.find(([, init]) => init?.method === 'POST');
+  expect(createTaskSchema.parse(JSON.parse(String(write?.[1]?.body)))).toMatchObject({ routineId: null, checklistRunId: null });
 });
 it('perda de perfil de chefia permite retomar cadastro como tarefa própria', async () => {
   chief(); const saved = jest.fn(); fetcher.mockImplementation((url) => String(url).includes('/users?') ? response({ items: [person()], nextCursor: null }) : response(taskFixture())); fixture.show(<TaskForm onSaved={saved} onCancel={() => undefined} />);

@@ -320,4 +320,6 @@ export const dimensions = {
   loginMax: 480,
   recoveryMessageMax: 280,
   pageMax: 1120,
+  formMax: 960,
+  formTextArea: 96,
 };
