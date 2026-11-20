@@ -28,7 +28,7 @@ export function RoutineListScreen() {
   const header = <View style={styles.header}>
     {user?.role === 'CHEFE' && <Button label={strings.routines.create} onPress={() => router.push('/rotina/nova')} />}
     <TextField label={strings.routines.search} value={input} onChangeText={setInput} maxLength={100} returnKeyType="search" onSubmitEditing={() => setQ(input.trim())} />
-    <Button label={strings.routines.searchAction} secondary onPress={() => setQ(input.trim())} />
+    <Button label={strings.routines.searchAction} variant="secondary" onPress={() => setQ(input.trim())} />
     <View style={styles.choices}>{(['all', 'today', 'archived'] satisfies ('all' | 'today' | 'archived')[]).map((value) => <Choice key={value} label={strings.routines[value]} selected={mode === value} onPress={() => setMode(value)} />)}</View>
     <View style={styles.choices}><Choice label={strings.routines.allFrequencies} selected={frequency === ''} onPress={() => setFrequency('')} />
       {routineFrequencySchema.options.map((value) => <Choice key={value} label={strings.dashboard.frequency[value]} selected={frequency === value} onPress={() => setFrequency(value)} />)}</View>
@@ -62,7 +62,7 @@ export function RoutineDetailScreen() {
     {routine.specificDate && <AppText variant="body" style={styles.text}>{strings.routines.specificDate}: {displayDate(routine.specificDate)}</AppText>}
     <AppText variant="body" style={styles.text}>{strings.routines.defaultPosition}: {routine.defaultPosition ? strings.routines.positions[routine.defaultPosition] : strings.routines.noPosition}</AppText>
     <AppText variant="body" style={styles.text}>{strings.routines.essential}: {routine.essentialForTransition ? strings.routines.yes : strings.routines.no}</AppText>
-    <Button label={strings.checklists.models} secondary onPress={() => router.push({ pathname: '/checklists', params: { routineId: routine.id } })} />
+    <Button label={strings.checklists.models} variant="secondary" onPress={() => router.push({ pathname: '/checklists', params: { routineId: routine.id } })} />
     {user?.role === 'CHEFE' && !routine.isArchived && <Button label={strings.checklists.create} onPress={() => router.push({ pathname: '/checklist/nova', params: { routineId: routine.id } })} />}
     <AppText variant="bodyStrong" style={styles.label}>{strings.routines.steps}</AppText></View>;
   return <Screen><FlashList data={routine.steps.map((text, index) => ({ text, index }))} keyExtractor={(step) => String(step.index)} contentContainerStyle={styles.content}
@@ -70,10 +70,10 @@ export function RoutineDetailScreen() {
     ListEmptyComponent={<AppText variant="body">{strings.routines.noSteps}</AppText>}
     ListFooterComponent={<View style={styles.footer}>{!!message && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{message}</AppText>}
       {user?.role === 'CHEFE' && !routine.isArchived && <><Button label={strings.routines.edit} disabled={archive.isPending} onPress={() => router.push({ pathname: '/rotina/[id]/editar', params: { id: routine.id } })} />
-        {!confirm ? <Button label={strings.routines.archive} secondary onPress={() => { setMessage(null); setConfirm(true); }} /> : <View style={styles.footer}>
+        {!confirm ? <Button label={strings.routines.archive} variant="secondary" onPress={() => { setMessage(null); setConfirm(true); }} /> : <View style={styles.footer}>
           <AppText variant="bodyStrong" style={styles.label}>{strings.routines.archiveTitle}</AppText><AppText variant="body" style={styles.text}>{strings.routines.archiveDescription}</AppText>
           <Button label={archive.isPending ? strings.routines.archiving : strings.routines.confirmArchive} loading={archive.isPending} onPress={() => archive.mutate()} />
-          <Button label={strings.routines.cancel} secondary disabled={archive.isPending} onPress={() => setConfirm(false)} /></View>}</>}
+          <Button label={strings.routines.cancel} variant="secondary" disabled={archive.isPending} onPress={() => setConfirm(false)} /></View>}</>}
     </View>} /></Screen>;
 }
 export function RoutineFormScreen({ mode }: { mode: 'create' | 'edit' }) {

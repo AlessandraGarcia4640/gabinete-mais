@@ -4,6 +4,7 @@ module.exports = {
   resolver: require.resolve('react-native/jest/resolver'),
   testEnvironment: require.resolve('react-native/jest/react-native-env'),
   setupFiles: [require.resolve('react-native/jest/setup'), require.resolve('jest-expo/src/preset/setup')],
+  setupFilesAfterEnv: [...(expoPreset.setupFilesAfterEnv ?? []), '<rootDir>/jest.setup.ts'],
   testMatch: ['**/src/**/*.test.ts', '**/src/**/*.test.tsx'],
   moduleNameMapper: {
     ...expoPreset.moduleNameMapper,

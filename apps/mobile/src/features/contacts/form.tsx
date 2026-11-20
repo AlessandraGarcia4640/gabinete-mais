@@ -45,16 +45,16 @@ export function ContactForm({ contact, onSaved, onCancel }: { contact?: Contact;
       </View>}
       renderItem={({ item }) => <View style={styles.section}><Controller control={form.control} name={`${item.kind}.${item.index}.text`} render={({ field, fieldState }) => <TextField label={item.kind === 'phones' ? strings.contacts.phone(item.index) : strings.contacts.tag(item.index)}
         value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} editable={!busy} keyboardType={item.kind === 'phones' ? 'phone-pad' : 'default'} errorText={fieldState.error ? strings.contacts.validation[item.kind] : undefined} />} />
-        <Button label={item.kind === 'phones' ? strings.contacts.removePhone(item.index) : strings.contacts.removeTag(item.index)} secondary disabled={busy} onPress={() => { if (item.kind === 'phones') phones.remove(item.index); else tags.remove(item.index); }} /></View>}
+        <Button label={item.kind === 'phones' ? strings.contacts.removePhone(item.index) : strings.contacts.removeTag(item.index)} variant="secondary" disabled={busy} onPress={() => { if (item.kind === 'phones') phones.remove(item.index); else tags.remove(item.index); }} /></View>}
       ListFooterComponent={<View style={styles.section}>
-        <Button label={strings.contacts.addPhone} secondary disabled={busy || phones.fields.length >= 10} onPress={() => phones.append({ text: '' })} />
-        <Button label={strings.contacts.addTag} secondary disabled={busy || tags.fields.length >= 20} onPress={() => tags.append({ text: '' })} />
+        <Button label={strings.contacts.addPhone} variant="secondary" disabled={busy || phones.fields.length >= 10} onPress={() => phones.append({ text: '' })} />
+        <Button label={strings.contacts.addTag} variant="secondary" disabled={busy || tags.fields.length >= 20} onPress={() => tags.append({ text: '' })} />
         {!!form.formState.errors.phones && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{strings.contacts.validation.phones}</AppText>}
         {!!form.formState.errors.tags && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{strings.contacts.validation.tags}</AppText>}
         {!!message && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{message}</AppText>}
         <Button label={strings.routines.save} loading={busy} disabled={!!baseline && !dirty} onPress={() => void form.handleSubmit(submit)()} />
-        <Button label={strings.routines.cancel} secondary disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
-        {discard && <><AppText variant="body">{strings.routines.unsavedTitle}</AppText><AppText variant="body">{strings.routines.unsavedDescription}</AppText><Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} secondary onPress={() => setDiscard(false)} /></>}
+        <Button label={strings.routines.cancel} variant="secondary" disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
+        {discard && <><AppText variant="body">{strings.routines.unsavedTitle}</AppText><AppText variant="body">{strings.routines.unsavedDescription}</AppText><Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} variant="secondary" onPress={() => setDiscard(false)} /></>}
       </View>} />
   </Screen>;
 }

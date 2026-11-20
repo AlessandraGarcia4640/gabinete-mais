@@ -25,8 +25,8 @@ export function ContactListScreen() {
     <TextField label={strings.contacts.search} value={input.q} onChangeText={(q) => setInput({ ...input, q })} maxLength={100} />
     <TextField label={strings.contacts.filterOrganization} value={input.organization} onChangeText={(organization) => setInput({ ...input, organization })} maxLength={200} />
     <TextField label={strings.contacts.filterTag} value={input.tag} onChangeText={(tag) => setInput({ ...input, tag })} maxLength={40} />
-    <Button label={strings.contacts.applyFilters} secondary onPress={() => setSearch({ q: input.q.trim(), organization: input.organization.trim(), tag: input.tag.trim() })} />
-    <Button label={strings.contacts.clearFilters} secondary onPress={() => { const cleared = { q: '', organization: '', tag: '' }; setInput(cleared); setSearch(cleared); setArchived(false); setKeyOnly(false); }} />
+    <Button label={strings.contacts.applyFilters} variant="secondary" onPress={() => setSearch({ q: input.q.trim(), organization: input.organization.trim(), tag: input.tag.trim() })} />
+    <Button label={strings.contacts.clearFilters} variant="secondary" onPress={() => { const cleared = { q: '', organization: '', tag: '' }; setInput(cleared); setSearch(cleared); setArchived(false); setKeyOnly(false); }} />
     <View style={styles.choices}><Choice label={strings.contacts.active} selected={!archived} onPress={() => setArchived(false)} /><Choice label={strings.contacts.archived} selected={archived} onPress={() => setArchived(true)} /></View>
     <View style={styles.choices}><Choice label={strings.contacts.all} selected={!keyOnly} onPress={() => setKeyOnly(false)} /><Choice label={strings.contacts.keyOnly} selected={keyOnly} onPress={() => setKeyOnly(true)} /></View></View>;
   return <Screen>{query.isPending ? <View>{header}<LoadingState /></View> : query.isError && !query.data ? <View>{header}<ErrorState retry={() => void query.refetch()} /></View> :
@@ -59,7 +59,7 @@ export function ContactDetailScreen() {
     ListEmptyComponent={<AppText variant="body" style={styles.text}>{strings.contacts.noPhones}</AppText>}
     ListFooterComponent={<View style={styles.section}>{archive.isError && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{contactError(archive.error)}</AppText>}
       {user?.role === 'CHEFE' && !contact.isArchived && <><Button label={strings.contacts.edit} disabled={archive.isPending} onPress={() => router.push({ pathname: '/contato/[id]/editar', params: { id: contact.id } })} />
-        {!confirm ? <Button label={strings.contacts.archive} secondary onPress={() => setConfirm(true)} /> : <><AppText variant="body">{strings.contacts.archiveHelp}</AppText><Button label={strings.contacts.confirmArchive} loading={archive.isPending} onPress={() => archive.mutate()} /><Button label={strings.routines.cancel} secondary disabled={archive.isPending} onPress={() => setConfirm(false)} /></>}</>}
+        {!confirm ? <Button label={strings.contacts.archive} variant="secondary" onPress={() => setConfirm(true)} /> : <><AppText variant="body">{strings.contacts.archiveHelp}</AppText><Button label={strings.contacts.confirmArchive} loading={archive.isPending} onPress={() => archive.mutate()} /><Button label={strings.routines.cancel} variant="secondary" disabled={archive.isPending} onPress={() => setConfirm(false)} /></>}</>}
     </View>} /></Screen>;
 }
 export function ContactFormScreen({ mode }: { mode: 'create' | 'edit' }) {

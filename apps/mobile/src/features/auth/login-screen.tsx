@@ -40,10 +40,10 @@ export function LoginScreen() {
       autoComplete="current-password" textContentType="password" editable={!login.isPending} returnKeyType="go"
       onSubmitEditing={() => { if (!login.isPending) void form.handleSubmit(submit)(); }}
       errorText={fieldState.error ? strings.auth.invalidPassword : undefined} />} />
-    <Button label={visible ? strings.auth.hidePassword : strings.auth.showPassword} secondary disabled={login.isPending} onPress={() => setVisible(!visible)} />
+    <Button label={visible ? strings.auth.hidePassword : strings.auth.showPassword} variant="secondary" disabled={login.isPending} onPress={() => setVisible(!visible)} />
     {!!notice && <AppText variant="caption" accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{notice}</AppText>}
     <Button label={login.isPending ? strings.auth.submitting : strings.auth.submit} loading={login.isPending} onPress={() => void form.handleSubmit(submit)()} />
-  </Card>{connection && <Button label={strings.connection.change} secondary disabled={login.isPending} onPress={() => { void connection.reset().catch(() => setMessage(strings.connection.storageError)); }} />}<AppText variant="caption" style={styles.footnote}>{strings.auth.invitation}</AppText>
+  </Card>{connection && <Button label={strings.connection.change} variant="secondary" disabled={login.isPending} onPress={() => { void connection.reset().catch(() => setMessage(strings.connection.storageError)); }} />}<AppText variant="caption" style={styles.footnote}>{strings.auth.invitation}</AppText>
     {Platform.OS === 'web' && <AppText variant="caption" style={styles.footnote}>{strings.auth.webSession}</AppText>}
   </AuthScreen>;
 }

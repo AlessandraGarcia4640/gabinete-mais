@@ -60,21 +60,21 @@ export function RoutineForm({ routine, onSaved, onCancel }: { routine?: Routine;
     <AppText variant="bodyStrong" style={styles.label}>{strings.routines.steps}</AppText>
   </View>;
   const footer = <View style={styles.footer}>
-    <Button label={strings.routines.addStep} secondary disabled={busy || steps.fields.length >= 100} onPress={() => steps.append({ text: '' })} />
+    <Button label={strings.routines.addStep} variant="secondary" disabled={busy || steps.fields.length >= 100} onPress={() => steps.append({ text: '' })} />
     {!!message && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{message}</AppText>}
     <Button label={busy ? strings.routines.saving : strings.routines.save} loading={busy} disabled={!!baseline && !dirty} onPress={() => void form.handleSubmit(submit)()} />
-    <Button label={strings.routines.cancel} secondary disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
+    <Button label={strings.routines.cancel} variant="secondary" disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
     {discard && <View style={styles.footer}><AppText variant="bodyStrong" style={styles.label}>{strings.routines.unsavedTitle}</AppText><AppText variant="body">{strings.routines.unsavedDescription}</AppText>
-      <Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} secondary onPress={() => setDiscard(false)} /></View>}
+      <Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} variant="secondary" onPress={() => setDiscard(false)} /></View>}
   </View>;
   return <Screen keyboard>
     <FlashList data={steps.fields} keyExtractor={(field) => field.id} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" ListHeaderComponent={header}
       ListEmptyComponent={<AppText variant="body" style={styles.empty}>{strings.routines.noSteps}</AppText>} ListFooterComponent={footer} renderItem={({ index }) => <View style={styles.step}>
         <Controller control={form.control} name={`steps.${index}.text`} render={({ field, fieldState }) => <TextField label={strings.routines.step(index)} value={field.value} multiline
           onChangeText={field.onChange} onBlur={field.onBlur} editable={!busy} errorText={fieldState.error ? strings.routines.validation.steps : undefined} />} />
-        <Button label={strings.routines.moveUp(index)} secondary disabled={busy || index === 0} onPress={() => steps.move(index, index - 1)} />
-        <Button label={strings.routines.moveDown(index)} secondary disabled={busy || index === steps.fields.length - 1} onPress={() => steps.move(index, index + 1)} />
-        <Button label={strings.routines.removeStep(index)} secondary disabled={busy} onPress={() => steps.remove(index)} />
+        <Button label={strings.routines.moveUp(index)} variant="secondary" disabled={busy || index === 0} onPress={() => steps.move(index, index - 1)} />
+        <Button label={strings.routines.moveDown(index)} variant="secondary" disabled={busy || index === steps.fields.length - 1} onPress={() => steps.move(index, index + 1)} />
+        <Button label={strings.routines.removeStep(index)} variant="secondary" disabled={busy} onPress={() => steps.remove(index)} />
       </View>} />
   </Screen>;
 }

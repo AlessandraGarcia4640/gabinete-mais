@@ -1,15 +1,17 @@
 import Feather from '@expo/vector-icons/Feather';
-import { size as sizes, type ColorTokens } from '../lib/theme';
+import { iconSize, type ColorTokens } from '../lib/theme';
 import { useTheme } from '../providers/theme-provider';
 
+export type IconName = keyof typeof Feather.glyphMap;
+
 type IconProps = {
-  name: keyof typeof Feather.glyphMap;
-  size?: 24 | 18 | 14;
+  name: IconName;
+  size?: (typeof iconSize)[keyof typeof iconSize];
   color?: keyof ColorTokens;
   accessibilityLabel?: string;
 };
 
-export function Icon({ name, size = sizes.icon, color = 'ink', accessibilityLabel }: IconProps) {
+export function Icon({ name, size = iconSize.standard, color = 'ink', accessibilityLabel }: IconProps) {
   const { colors } = useTheme();
   return (
     <Feather

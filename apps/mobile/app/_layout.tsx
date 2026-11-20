@@ -3,6 +3,7 @@ import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono/500Mediu
 import { IBMPlexSans_400Regular } from '@expo-google-fonts/ibm-plex-sans/400Regular';
 import { IBMPlexSans_500Medium } from '@expo-google-fonts/ibm-plex-sans/500Medium';
 import { IBMPlexSans_600SemiBold } from '@expo-google-fonts/ibm-plex-sans/600SemiBold';
+import Feather from '@expo/vector-icons/Feather';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { ConnectionGate } from '../src/features/auth/connection-gate';
@@ -19,6 +20,7 @@ import { fontFamily } from '../src/lib/theme';
 import { ThemeProvider, useTheme } from '../src/providers/theme-provider';
 
 const appFonts = {
+  ...Feather.font,
   [fontFamily.sans400]: IBMPlexSans_400Regular,
   [fontFamily.sans500]: IBMPlexSans_500Medium,
   [fontFamily.sans600]: IBMPlexSans_600SemiBold,

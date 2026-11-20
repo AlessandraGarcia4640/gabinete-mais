@@ -297,3 +297,20 @@ export const themes: Readonly<Record<ThemeName, Theme>> = {
   light: { name: 'light', colors: colors.light, shadow: shadow.light },
   dark: { name: 'dark', colors: colors.dark, shadow: shadow.dark },
 };
+
+// Medidas de componentes especificadas em design-system/bundle.css.
+export const line = { thin: 1, control: 1.5, strong: 2, focusOffset: 2 };
+export const iconSize = { standard: size.icon, small: 18, extraSmall: 14 } as const;
+export const dimensions = {
+  appBar: 56,
+  fab: 56,
+  listRow: 56,
+  switchKnob: 20,
+  smallAvatar: 28,
+  largeAvatar: 64,
+  timelineMarker: 32,
+  textArea: 120,
+  dialogMax: 440,
+  sheetGrip: 36,
+  keyColumn: 112,
+};

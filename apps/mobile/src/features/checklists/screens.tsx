@@ -36,7 +36,7 @@ export function ChecklistListScreen() {
   const styles = useStyles();
   const params = useLocalSearchParams(); const routineId = identifier(params.routineId); const [archived, setArchived] = useState(false); const query = useTemplates(archived, routineId); const router = useRouter();
   return <Page query={query} data={query.data?.pages.flatMap((page) => page.items) ?? []} empty={strings.checklists.empty}
-    header={<View style={styles.section}><Button label={strings.checklists.history} secondary onPress={() => router.push('/execucoes')} />
+    header={<View style={styles.section}><Button label={strings.checklists.history} variant="secondary" onPress={() => router.push('/execucoes')} />
       <View style={styles.choices}><Choice label={strings.checklists.active} selected={!archived} onPress={() => setArchived(false)} /><Choice label={strings.checklists.archived} selected={archived} onPress={() => setArchived(true)} /></View></View>}
     render={(item) => <Card label={item.title} onPress={() => router.push({ pathname: '/checklist/[id]', params: { id: item.id } })}><AppText variant="bodyStrong" style={styles.label}>{item.title}</AppText><AppText variant="body">{strings.checklists.version(item.version)}</AppText></Card>} />;
 }
@@ -66,17 +66,17 @@ export function ChecklistDetailScreen() {
   const template = query.data; const blocked = template.isArchived || routine.data?.isArchived; const busy = start.isPending || archive.isPending;
   return <Screen><FlashList data={template.items.map((text, index) => ({ text, index }))} keyExtractor={(item) => String(item.index)} contentContainerStyle={styles.content}
     ListHeaderComponent={<View style={styles.section}><AppText variant="titleLg" accessibilityRole="header" style={styles.title}>{template.title}</AppText><AppText variant="body">{strings.checklists.version(template.version)}</AppText>
-      <Button label={routine.data?.title ?? strings.routines.details} secondary onPress={() => router.push({ pathname: '/rotina/[id]', params: { id: template.routineId } })} />
+      <Button label={routine.data?.title ?? strings.routines.details} variant="secondary" onPress={() => router.push({ pathname: '/rotina/[id]', params: { id: template.routineId } })} />
       {blocked && <AppText variant="body">{strings.checklists.archivedLabel}</AppText>}</View>}
     renderItem={({ item }) => <Card><AppText variant="bodyStrong" style={styles.label}>{strings.checklists.item(item.index)}</AppText><AppText variant="body" style={styles.text}>{item.text}</AppText></Card>}
-    ListFooterComponent={<View style={styles.section}><Button label={strings.checklists.history} secondary onPress={() => router.push({ pathname: '/execucoes', params: { templateId: template.id } })} />
+    ListFooterComponent={<View style={styles.section}><Button label={strings.checklists.history} variant="secondary" onPress={() => router.push({ pathname: '/execucoes', params: { templateId: template.id } })} />
       {routine.isPending && <LoadingState />}{routine.isError && <ErrorState retry={() => void routine.refetch()} />}
       {!blocked && !!routine.data && <><AppText variant="body">{strings.checklists.startHelp}</AppText><Controller control={form.control} name="date" render={({ field, fieldState }) => <TextField label={strings.checklists.date} placeholder={strings.routines.datePlaceholder} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} editable={!busy} errorText={fieldState.error ? strings.routines.validation.specificDate : undefined} />} />
         <Button label={strings.checklists.start} loading={start.isPending} disabled={busy} onPress={() => void form.handleSubmit((value) => start.mutate(value))()} />
-        {user?.role === 'CHEFE' && <Button label={strings.checklists.edit} disabled={busy} secondary onPress={() => router.push({ pathname: '/checklist/[id]/editar', params: { id: template.id } })} />}</>}
+        {user?.role === 'CHEFE' && <Button label={strings.checklists.edit} disabled={busy} variant="secondary" onPress={() => router.push({ pathname: '/checklist/[id]/editar', params: { id: template.id } })} />}</>}
       {start.isError && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{checklistError(start.error)}</AppText>}
       {archive.isError && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{checklistError(archive.error)}</AppText>}
-      {user?.role === 'CHEFE' && !template.isArchived && (!confirm ? <Button label={strings.checklists.archive} disabled={busy} secondary onPress={() => setConfirm(true)} /> : <><AppText variant="body">{strings.checklists.archiveHelp}</AppText><Button label={strings.checklists.confirmArchive} loading={archive.isPending} disabled={busy} onPress={() => archive.mutate()} /><Button label={strings.routines.cancel} secondary disabled={busy} onPress={() => setConfirm(false)} /></>)}
+      {user?.role === 'CHEFE' && !template.isArchived && (!confirm ? <Button label={strings.checklists.archive} disabled={busy} variant="secondary" onPress={() => setConfirm(true)} /> : <><AppText variant="body">{strings.checklists.archiveHelp}</AppText><Button label={strings.checklists.confirmArchive} loading={archive.isPending} disabled={busy} onPress={() => archive.mutate()} /><Button label={strings.routines.cancel} variant="secondary" disabled={busy} onPress={() => setConfirm(false)} /></>)}
     </View>} /></Screen>;
 }
 export function ChecklistRunScreen() {

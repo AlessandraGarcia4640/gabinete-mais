@@ -17,7 +17,7 @@ export function SessionGate({ children }: PropsWithChildren) {
   if (session.status === 'recovery') return <AuthScreen><AppText variant="titleLg" accessibilityRole="header" style={styles.title}>{strings.auth.recoveryTitle}</AppText>
     <AppText variant="body" accessibilityRole="alert" style={styles.message}>{session.errorCode ? strings.auth[session.errorCode] : strings.auth.unexpected}</AppText>
     <Button label={strings.auth.retry} onPress={() => retry.mutate()} loading={retry.isPending} />
-    <Button label={strings.auth.returnToLogin} secondary onPress={() => exit.mutate()} loading={exit.isPending} />
+    <Button label={strings.auth.returnToLogin} variant="secondary" onPress={() => exit.mutate()} loading={exit.isPending} />
   </AuthScreen>;
   return children;
 }

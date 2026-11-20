@@ -37,15 +37,15 @@ export function ChecklistForm({ routine, template, onSaved, onCancel }: { routin
     <FlashList data={items.fields} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"
       ListHeaderComponent={<View style={styles.section}><AppText variant="titleLg" style={styles.title}>{routine.title}</AppText><Controller control={form.control} name="title" render={({ field, fieldState }) => <TextField label={strings.checklists.name} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} editable={!busy} errorText={fieldState.error ? strings.checklists.invalidTitle : undefined} />} /><AppText variant="bodyStrong" style={styles.label}>{strings.checklists.items}</AppText></View>}
       renderItem={({ index }) => <View style={styles.section}><Controller control={form.control} name={`items.${index}.text`} render={({ field, fieldState }) => <TextField label={strings.checklists.item(index)} value={field.value} multiline onChangeText={field.onChange} onBlur={field.onBlur} editable={!busy} errorText={fieldState.error ? strings.checklists.invalidItems : undefined} />} />
-        <Button label={strings.checklists.up(index)} secondary disabled={busy || index === 0} onPress={() => items.move(index, index - 1)} />
-        <Button label={strings.checklists.down(index)} secondary disabled={busy || index === items.fields.length - 1} onPress={() => items.move(index, index + 1)} />
-        <Button label={strings.checklists.remove(index)} secondary disabled={busy} onPress={() => items.remove(index)} /></View>}
-      ListFooterComponent={<View style={styles.section}><Button label={strings.checklists.add} secondary disabled={busy || items.fields.length >= 100} onPress={() => items.append({ text: '' })} />
+        <Button label={strings.checklists.up(index)} variant="secondary" disabled={busy || index === 0} onPress={() => items.move(index, index - 1)} />
+        <Button label={strings.checklists.down(index)} variant="secondary" disabled={busy || index === items.fields.length - 1} onPress={() => items.move(index, index + 1)} />
+        <Button label={strings.checklists.remove(index)} variant="secondary" disabled={busy} onPress={() => items.remove(index)} /></View>}
+      ListFooterComponent={<View style={styles.section}><Button label={strings.checklists.add} variant="secondary" disabled={busy || items.fields.length >= 100} onPress={() => items.append({ text: '' })} />
         {!!form.formState.errors.items && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{strings.checklists.invalidItems}</AppText>}
         {!!message && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{message}</AppText>}
         <Button label={strings.routines.save} loading={busy} disabled={!!baseline && !dirty} onPress={() => void form.handleSubmit(submit)()} />
-        <Button label={strings.routines.cancel} secondary disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
-        {discard && <><AppText variant="body">{strings.routines.unsavedTitle}</AppText><Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} secondary onPress={() => setDiscard(false)} /></>}
+        <Button label={strings.routines.cancel} variant="secondary" disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
+        {discard && <><AppText variant="body">{strings.routines.unsavedTitle}</AppText><Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} variant="secondary" onPress={() => setDiscard(false)} /></>}
       </View>} />
   </Screen>;
 }

@@ -52,15 +52,15 @@ export function TaskForm({ task, onSaved, onCancel }: { task?: Task; onSaved: (t
         errorText={fieldState.error ? strings.tasks.validation[item] : undefined} />} /></View>}
       ListFooterComponent={<View style={styles.section}><AppText variant="bodyStrong" style={styles.label}>{strings.tasks.priority}</AppText><Controller control={form.control} name="priority" render={({ field }) => <View style={styles.choices}>{taskPrioritySchema.options.map((value) => <Choice key={value} label={strings.dashboard.priority[value]} selected={field.value === value} disabled={busy} onPress={() => field.onChange(value)} />)}</View>} />
         {baseline ? <AppText variant="body">{strings.tasks.linksFixed}</AppText> : <><AppText variant="body">{strings.tasks.inheritance}</AppText><AppText variant="bodyStrong" style={styles.label}>{strings.tasks.assignee}</AppText><AppText variant="body">{labels.person}</AppText>
-          {user?.role === 'CHEFE' && <Button label={strings.tasks.selectPerson} secondary disabled={busy} onPress={() => setPicker('person')} />}
-          {!!user && assigneeId !== user.id && <Button label={strings.tasks.self} secondary disabled={busy} onPress={() => select('person', { id: user.id, label: user.name })} />}
+          {user?.role === 'CHEFE' && <Button label={strings.tasks.selectPerson} variant="secondary" disabled={busy} onPress={() => setPicker('person')} />}
+          {!!user && assigneeId !== user.id && <Button label={strings.tasks.self} variant="secondary" disabled={busy} onPress={() => select('person', { id: user.id, label: user.name })} />}
           {(['routine', 'contact', 'run'] satisfies ('routine' | 'contact' | 'run')[]).map((kind) => <View key={kind} style={styles.section}><AppText variant="bodyStrong" style={styles.label}>{strings.tasks[kind]}</AppText><AppText variant="body">{labels[kind] ?? strings.tasks.noLink}</AppText>
-            <Button label={kind === 'routine' ? strings.tasks.selectRoutine : kind === 'contact' ? strings.tasks.selectContact : strings.tasks.selectRun} secondary disabled={busy} onPress={() => setPicker(kind)} />
-            {!!labels[kind] && <Button label={strings.tasks.clearLink} secondary disabled={busy} onPress={() => clear(kind)} />}</View>)}</>}
+            <Button label={kind === 'routine' ? strings.tasks.selectRoutine : kind === 'contact' ? strings.tasks.selectContact : strings.tasks.selectRun} variant="secondary" disabled={busy} onPress={() => setPicker(kind)} />
+            {!!labels[kind] && <Button label={strings.tasks.clearLink} variant="secondary" disabled={busy} onPress={() => clear(kind)} />}</View>)}</>}
         {!!message && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{message}</AppText>}
         <Button label={strings.routines.save} loading={busy} disabled={!!baseline && !dirty} onPress={() => void form.handleSubmit(submit)()} />
-        <Button label={strings.routines.cancel} secondary disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
-        {discard && <><AppText variant="body">{strings.routines.unsavedTitle}</AppText><Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} secondary onPress={() => setDiscard(false)} /></>}
+        <Button label={strings.routines.cancel} variant="secondary" disabled={busy} onPress={() => { if (dirty) setDiscard(true); else onCancel(); }} />
+        {discard && <><AppText variant="body">{strings.routines.unsavedTitle}</AppText><Button label={strings.routines.discard} onPress={onCancel} /><Button label={strings.routines.continueEditing} variant="secondary" onPress={() => setDiscard(false)} /></>}
       </View>} />
     {!!picker && <ResourcePicker kind={picker} assigneeId={assigneeId} routineId={routineId} onSelect={(option) => select(picker, option)} onClose={() => setPicker(null)} />}
   </Screen>;

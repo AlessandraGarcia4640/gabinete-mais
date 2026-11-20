@@ -1,21 +1,37 @@
 import type { PropsWithChildren } from 'react';
-import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
-import { radius, size, spacing } from '../lib/theme';
-import { createThemedStyles } from '../providers/theme-provider';
-import { useState } from 'react';
-type Props = PropsWithChildren<{ style?: StyleProp<ViewStyle> } & ({ onPress: () => void; label: string } | { onPress?: never; label?: never })>;
-export function Card({ children, style, onPress, label }: Props) {
-  const styles = useStyles();
-  const [focused, setFocused] = useState(false);
-  if (onPress) return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} style={({ pressed }) => [styles.card, style, styles.interactive, focused && styles.focused, pressed && styles.pressed]}>{children}</Pressable>;
-  return <View style={[styles.card, style]}>{children}</View>;
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { line, radius, size, spacing } from '../lib/theme';
+import { useTheme } from '../providers/theme-provider';
+import { Control } from './control';
+
+type CardProps = PropsWithChildren<{ flat?: boolean; style?: StyleProp<ViewStyle> } & (
+  { onPress: () => void; label: string; selected?: boolean } |
+  { onPress?: never; label?: never; selected?: never }
+)>;
+
+export function Card({ children, style, flat = false, onPress, label, selected }: CardProps) {
+  const { colors, shadow } = useTheme();
+  const surface = {
+    backgroundColor: flat ? colors.surfaceSunken : selected ? colors.brandSoft : colors.surface,
+    borderColor: selected ? colors.brand : colors.border,
+  };
+
+  if (!onPress) return <View style={[styles.card, surface, style]}>{children}</View>;
+  return (
+    <Control
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={selected === undefined ? undefined : { selected }}
+      onPress={onPress}
+      style={[styles.card, styles.interactive, surface, { boxShadow: shadow.level1 }, style]}
+      pressedStyle={{ backgroundColor: colors.surfaceSunken, borderColor: colors.borderStrong }}
+    >
+      {children}
+    </Control>
+  );
 }
-const useStyles = createThemedStyles((theme) => ({
-  card: {
-    backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: radius.lg, padding: spacing.space4, gap: spacing.space2, marginBottom: spacing.space3,
-  },
-  interactive: { minHeight: size.touchTarget, minWidth: size.touchTarget, borderWidth: 2 },
-  focused: { borderColor: theme.colors.focus },
-  pressed: { backgroundColor: theme.colors.surfaceSunken },
-}));
+
+const styles = StyleSheet.create({
+  card: { borderWidth: line.thin, borderRadius: radius.lg, padding: spacing.space4, gap: spacing.space3 },
+  interactive: { minHeight: size.touchTarget, minWidth: size.touchTarget },
+});
