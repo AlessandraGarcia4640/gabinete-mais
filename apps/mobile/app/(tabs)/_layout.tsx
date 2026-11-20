@@ -29,7 +29,7 @@ function AuthenticatedShell() {
   const { backTo, routineView } = route;
   const wideSplit = width >= breakpoint.expanded && !!route.split;
   const list = route.split === 'tasks' ? (
-    <View style={styles.body}><AppBar title={strings.nav.tasks} /><TaskListScreen selectedId={id} /></View>
+    <TaskListScreen selectedId={id} />
   ) : route.split === 'guidelines' ? (
     <View style={styles.body}><AppBar title={strings.nav.guidelines} /><GuidelineListScreen selectedId={id} /></View>
   ) : undefined;

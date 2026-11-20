@@ -21,8 +21,40 @@ it('catálogo pagina, filtra status/prioridade/atraso/equipe e abre detalhe', as
   fetcher.mockImplementation((url) => response({ items: [taskFixture({ id: String(url).includes('cursor=') ? 'second' : 'task-1', title: String(url).includes('cursor=') ? 'Segunda tarefa' : 'Tarefa fictícia' })], nextCursor: String(url).includes('cursor=') ? null : 'next' }));
   fixture.show(<TaskListScreen />); await screen.findByRole('button', { name: 'Tarefa fictícia' }); expect(String(fetcher.mock.calls[0]?.[0])).toContain('assigneeId=actor');
   fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore })); await screen.findByRole('button', { name: 'Segunda tarefa' }); fireEvent.press(screen.getByRole('button', { name: 'Tarefa fictícia' })); expect(mockPush).toHaveBeenCalledWith({ pathname: '/tarefa/[id]', params: { id: 'task-1' } });
-  fireEvent.press(screen.getByRole('radio', { name: strings.tasks.all })); fireEvent.press(screen.getByRole('radio', { name: strings.dashboard.status.CONCLUIDA })); fireEvent.press(screen.getByRole('radio', { name: strings.dashboard.priority.ALTA })); fireEvent.press(screen.getByRole('radio', { name: strings.tasks.overdue }));
+  fireEvent.press(screen.getByRole('tab', { name: strings.tasks.all }));
+  fireEvent.press(screen.getByRole('button', { name: strings.tasks.filters }));
+  fireEvent.press(await screen.findByRole('radio', { name: strings.dashboard.status.CONCLUIDA }));
+  fireEvent.press(screen.getByRole('radio', { name: strings.dashboard.priority.ALTA }));
+  fireEvent.press(screen.getByRole('switch', { name: strings.tasks.overdue }));
+  expect(new URL(String(fetcher.mock.calls.at(-1)?.[0])).searchParams.get('priority')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: strings.tasks.applyFilters }));
   await waitFor(() => { const url = new URL(String(fetcher.mock.calls.at(-1)?.[0])); expect(url.searchParams.has('assigneeId')).toBe(false); expect(url.searchParams.get('status')).toBe('CONCLUIDA'); expect(url.searchParams.get('priority')).toBe('ALTA'); expect(url.searchParams.get('overdue')).toBe('true'); }); await screen.findByRole('button', { name: 'Tarefa fictícia' });
+});
+it('agrupa somente a página carregada, busca por envio e resolve apenas o nome de outra pessoa', async () => {
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    if (path.pathname === '/users/other') return response(person());
+    return response({ items: [
+      taskFixture({ id: 'overdue-task', title: 'Prazo fictício vencido', dueDate: '2026-10-12', isOverdue: true }),
+      taskFixture({ id: 'linked-task', title: 'Tarefa fictícia vinculada', assigneeId: 'other', routineId: 'routine-1', checklistRunId: 'run-1' }),
+    ], nextCursor: null });
+  });
+  fixture.show(<TaskListScreen selectedId="linked-task" />);
+  await screen.findByRole('header', { name: strings.tasks.groupCount(strings.dashboard.overdue, 1) });
+  expect(screen.getByRole('header', { name: strings.tasks.groupCount(strings.tasks.upcoming, 1) })).toBeTruthy();
+  expect(screen.getByText(strings.tasks.routine)).toBeTruthy();
+  expect(screen.getByText(strings.tasks.run)).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Tarefa fictícia vinculada', selected: true })).toBeTruthy();
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes('/users/'))).toBe(false);
+  fireEvent.press(screen.getByRole('tab', { name: strings.tasks.all }));
+  await screen.findByText('Outra Pessoa');
+  expect(screen.getByText('Pessoa Fictícia')).toBeTruthy();
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes('/users/actor'))).toBe(false);
+  const search = screen.getByLabelText(strings.tasks.search);
+  fireEvent.changeText(search, '  tarefa fictícia  ');
+  expect(new URL(String(fetcher.mock.calls.at(-1)?.[0])).searchParams.has('q')).toBe(false);
+  fireEvent(search, 'submitEditing');
+  await waitFor(() => expect(fetcher.mock.calls.some(([url]) => new URL(String(url)).searchParams.get('q') === 'tarefa fictícia')).toBe(true));
 });
 it('catálogo exibe falha recuperável e vazio', async () => {
   fetcher.mockRejectedValue(new Error('offline')); fixture.show(<TaskListScreen />); await screen.findByText(strings.feedback.error); fetcher.mockImplementation(() => response({ items: [], nextCursor: null })); fireEvent.press(screen.getByRole('button', { name: strings.feedback.retry })); await screen.findByText(strings.tasks.empty);

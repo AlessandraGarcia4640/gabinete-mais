@@ -22,6 +22,7 @@ export function Card({ children, style, flat = false, onPress, label, selected }
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={selected === undefined ? undefined : { selected }}
+      aria-current={selected || undefined}
       onPress={onPress}
       style={[styles.card, styles.interactive, surface, { boxShadow: shadow.level1 }, style]}
       pressedStyle={{ backgroundColor: colors.surfaceSunken, borderColor: colors.borderStrong }}

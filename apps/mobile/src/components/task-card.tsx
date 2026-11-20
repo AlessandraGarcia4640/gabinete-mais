@@ -4,7 +4,7 @@ import { iconSize, spacing, type ColorTokens } from '../lib/theme';
 import { AppText } from './app-text';
 import { Avatar } from './avatar';
 import { Card } from './card';
-import { Icon } from './icon';
+import { Icon, type IconName } from './icon';
 import { PriorityTag } from './priority-tag';
 import { StatusBadge } from './status-badge';
 
@@ -12,12 +12,12 @@ type TaskCardProps = {
   task: Pick<Task, 'title' | 'status' | 'priority' | 'isOverdue'>;
   deadline: string;
   deadlineToday?: boolean;
-  linkedResource?: string;
+  links?: readonly { label: string; icon: IconName }[];
   assignee?: string;
 } & ({ onPress: () => void; selected?: boolean } | { onPress?: never; selected?: never });
 
 export function TaskCard({
-  task, deadline, deadlineToday, linkedResource, assignee, onPress, selected,
+  task, deadline, deadlineToday, links, assignee, onPress, selected,
 }: TaskCardProps) {
   const deadlineColor: keyof ColorTokens = task.isOverdue ? 'danger' : deadlineToday ? 'accentText' : 'inkMuted';
   const content = (
@@ -27,12 +27,12 @@ export function TaskCard({
         <PriorityTag priority={task.priority} />
       </View>
       <AppText variant="heading" numberOfLines={2}>{task.title}</AppText>
-      {!!linkedResource && (
-        <View style={styles.meta}>
-          <Icon name="list" size={iconSize.extraSmall} color="inkMuted" />
-          <AppText variant="caption" color="inkMuted" style={styles.label}>{linkedResource}</AppText>
+      {links?.map(({ label, icon }) => (
+        <View key={label} style={styles.meta}>
+          <Icon name={icon} size={iconSize.extraSmall} color="inkMuted" />
+          <AppText variant="caption" color="inkMuted" style={styles.label}>{label}</AppText>
         </View>
-      )}
+      ))}
       <View style={styles.row}>
         <View style={styles.meta}>
           <Icon name="calendar" size={iconSize.extraSmall} color={deadlineColor} />

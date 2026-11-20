@@ -19,7 +19,11 @@ export const strings = {
   feedback: { loading: 'Carregando informações…', error: 'Não foi possível carregar as informações.', errorHelp: 'Confira sua conexão e tente novamente.', retry: 'Tentar novamente', refresh: 'Atualizar', loadMore: 'Carregar mais', loadingMore: 'Carregando mais…', updatingError: 'Não foi possível atualizar. Tente novamente.', selectDetail: 'Selecione um item para ver os detalhes.' },
   tasks: {
     title: 'Tarefas', details: 'Detalhes da tarefa', create: 'Nova tarefa', edit: 'Editar tarefa', history: 'Histórico da tarefa', empty: 'Nenhuma tarefa encontrada.',
-    name: 'Título', description: 'Descrição', instructions: 'Orientações', dueDate: 'Prazo', priority: 'Prioridade', search: 'Buscar tarefas', mine: 'Minhas tarefas', all: 'Todas as tarefas', allStatuses: 'Todos os status', allPriorities: 'Todas as prioridades', overdue: 'Somente em atraso', anyDeadline: 'Todos os prazos',
+    name: 'Título', description: 'Descrição', instructions: 'Orientações', dueDate: 'Prazo', priority: 'Prioridade', search: 'Buscar tarefas', mine: 'Minhas tarefas', all: 'Todas as tarefas', allStatuses: 'Todos os status', overdue: 'Somente em atraso',
+    status: 'Status', everyStatus: 'Todos', everyPriority: 'Todas', scope: 'Escopo das tarefas',
+    filters: 'Filtros', clearFilters: 'Limpar filtros', applyFilters: 'Aplicar filtros',
+    overdueHelp: 'Prazo vencido e tarefa não encerrada.', emptyHelp: 'Ajuste a busca ou os filtros, ou cadastre uma nova tarefa para a equipe.',
+    upcoming: 'Próximos prazos', groupCount: (label: string, count: number) => `${label} · ${String(count)}`,
     assignee: 'Responsável', creator: 'Criada por', personUnknown: 'Integrante da equipe', routine: 'Rotina vinculada', contact: 'Contato vinculado', run: 'Checklist vinculado',
     selectPerson: 'Escolher responsável', self: 'Atribuir a mim', selectRoutine: 'Vincular rotina', selectContact: 'Vincular contato', selectRun: 'Vincular execução de checklist', noLink: 'Sem vínculo', clearLink: 'Remover vínculo', selectionEmpty: 'Nenhum registro disponível.',
     start: 'Iniciar tarefa', complete: 'Concluir tarefa', cancelTask: 'Cancelar tarefa', confirmCancel: 'Confirmar cancelamento da tarefa', cancelHelp: 'A tarefa será encerrada como cancelada. Seus registros e vínculos serão preservados.',

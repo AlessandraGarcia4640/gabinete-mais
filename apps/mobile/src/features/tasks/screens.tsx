@@ -1,47 +1,28 @@
 import { AppText } from '../../components/app-text';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Card } from '../../components/card';
 import { Screen } from '../../components/screen';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { taskPrioritySchema, taskStatusSchema, userIdParamsSchema, type Task, type TaskEventPage } from '@gabinete-plus/shared';
+import { userIdParamsSchema, type Task, type TaskEventPage } from '@gabinete-plus/shared';
 import { Button } from '../../components/button';
-import { TextField } from '../../components/text-field';
 import { strings } from '../../lib/strings';
 import { useSession, useSessionManager } from '../../providers/session-provider';
 import { LoadingState, EmptyState, ErrorState } from '../../components/feedback';
-import { TaskCard } from '../dashboard/cards';
-import { useGabineteDate } from '../dashboard/hooks';
 import { displayDate } from '../dashboard/model';
-import { Choice } from '../../components/choice';
 import { useRoutine } from '../routines/hooks';
 import { useContact } from '../contacts/hooks';
 import { useRun } from '../checklists/hooks';
-import { taskError, useTask, useTaskHistory, useTaskPerson, useTasks, useTasksApi } from './hooks';
+import { taskError, useTask, useTaskHistory, useTaskPerson, useTasksApi } from './hooks';
 import { taskActions } from './model';
 import { TaskForm } from './form';
 import { ResourcePicker } from './picker';
 import type { ResourceOption } from './api';
 import { useStyles } from './styles';
 function useId() { const params = useLocalSearchParams(); const valid = userIdParamsSchema.safeParse({ id: params.id }); return valid.success ? valid.data.id : undefined; }
-export function TaskListScreen({ selectedId }: { selectedId?: string } = {}) {
-  const styles = useStyles();
-  const router = useRouter(); const day = useGabineteDate(); const [mine, setMine] = useState(true); const [status, setStatus] = useState<Task['status'] | ''>('ABERTA'); const [priority, setPriority] = useState<Task['priority'] | ''>(''); const [overdue, setOverdue] = useState(false); const [input, setInput] = useState(''); const [q, setQ] = useState('');
-  const query = useTasks({ mine, status, priority, q, overdue }, day); const data = useMemo(() => [...new Map((query.data?.pages.flatMap((page) => page.items) ?? []).map((task) => [task.id, task])).values()], [query.data]);
-  const header = <View style={styles.section}><Button label={strings.tasks.create} onPress={() => router.push('/tarefa/nova')} />
-    <TextField label={strings.tasks.search} value={input} onChangeText={setInput} maxLength={100} returnKeyType="search" onSubmitEditing={() => setQ(input.trim())} /><Button label={strings.routines.searchAction} variant="secondary" onPress={() => setQ(input.trim())} />
-    <View style={styles.choices}><Choice label={strings.tasks.mine} selected={mine} onPress={() => setMine(true)} /><Choice label={strings.tasks.all} selected={!mine} onPress={() => setMine(false)} /></View>
-    <View style={styles.choices}><Choice label={strings.tasks.allStatuses} selected={status === ''} onPress={() => setStatus('')} />{taskStatusSchema.options.map((value) => <Choice key={value} label={strings.dashboard.status[value]} selected={status === value} onPress={() => setStatus(value)} />)}</View>
-    <View style={styles.choices}><Choice label={strings.tasks.allPriorities} selected={priority === ''} onPress={() => setPriority('')} />{taskPrioritySchema.options.map((value) => <Choice key={value} label={strings.dashboard.priority[value]} selected={priority === value} onPress={() => setPriority(value)} />)}</View>
-    <View style={styles.choices}><Choice label={strings.tasks.anyDeadline} selected={!overdue} onPress={() => setOverdue(false)} /><Choice label={strings.tasks.overdue} selected={overdue} onPress={() => setOverdue(true)} /></View></View>;
-  return <Screen>{query.isPending ? <View>{header}<LoadingState /></View> : query.isError && !query.data ? <View>{header}<ErrorState retry={() => void query.refetch()} /></View> :
-    <FlashList data={data} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} ListHeaderComponent={header} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}
-      renderItem={({ item }) => <TaskCard task={item} selected={selectedId === item.id} onPress={() => router.push({ pathname: '/tarefa/[id]', params: { id: item.id } })} />}
-      ListEmptyComponent={query.isError ? null : <EmptyState message={strings.tasks.empty} />} ListFooterComponent={<View style={styles.section}>{query.isError && <ErrorState updating retry={() => { if (query.isFetchNextPageError) void query.fetchNextPage(); else void query.refetch(); }} />}
-        {query.hasNextPage && <Button label={strings.feedback.loadMore} loading={query.isFetchingNextPage} disabled={query.isRefetching} onPress={() => void query.fetchNextPage()} />}</View>} />}</Screen>;
-}
+export { TaskListScreen } from './list-screen';
 type Command = { kind: 'status'; status: Task['status'] } | { kind: 'assign'; assigneeId: string };
 export function TaskDetailScreen() {
   const styles = useStyles();

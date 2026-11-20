@@ -61,7 +61,7 @@ export function routeMetadata(pathname: string): RouteMetadata {
     case '':
       return { primary: 'home', sidebar: 'home', top: true };
     case 'tarefas':
-      return { primary: 'tasks', sidebar: 'tasks', top: true, title: nav.tasks, split: 'tasks' };
+      return { primary: 'tasks', sidebar: 'tasks', top: true, split: 'tasks' };
     case 'tarefa':
       return {
         primary: 'tasks', sidebar: 'tasks', backTo: '/tarefas',

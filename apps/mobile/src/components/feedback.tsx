@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { strings } from '../lib/strings';
 import { spacing } from '../lib/theme';
 import { AppText } from './app-text';
@@ -13,9 +14,10 @@ interface MessageProps {
   description?: string;
   icon?: IconName;
   action?: { label: string; onPress: () => void; icon?: IconName };
+  actions?: ReactNode;
 }
 
-function StateMessage({ message, description, icon = 'inbox', action, error }: MessageProps & { error?: boolean }) {
+function StateMessage({ message, description, icon = 'inbox', action, actions, error }: MessageProps & { error?: boolean }) {
   return (
     <View style={styles.state}>
       <FeedbackSymbol icon={icon} danger={error} />
@@ -29,15 +31,18 @@ function StateMessage({ message, description, icon = 'inbox', action, error }: M
       </AppText>
       {!!description && <AppText variant="label" color="inkMuted" style={styles.center}>{description}</AppText>}
       {!!action && <Button {...action} variant={error ? 'secondary' : 'primary'} />}
+      {actions}
     </View>
   );
 }
 
-export function LoadingState({ message = strings.feedback.loading }: { message?: string }) {
+export function LoadingState({ message = strings.feedback.loading, count = 1, style }: {
+  message?: string; count?: number; style?: StyleProp<ViewStyle>;
+}) {
   return (
-    <View accessibilityState={{ busy: true }} style={styles.loading}>
+    <View accessibilityState={{ busy: true }} style={[styles.loading, style]}>
       <AppText variant="caption" color="inkMuted" accessibilityLiveRegion="polite">{message}</AppText>
-      <Skeleton />
+      {Array.from({ length: count }, (_, index) => <Skeleton key={index} />)}
     </View>
   );
 }
