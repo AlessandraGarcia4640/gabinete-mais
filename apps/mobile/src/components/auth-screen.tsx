@@ -1,10 +1,10 @@
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { size, spacing } from '../lib/theme';
 import { Screen } from './screen';
-export function AuthScreen({ children }: PropsWithChildren) {
+export function AuthScreen({ children, contentStyle }: PropsWithChildren<{ contentStyle?: StyleProp<ViewStyle> }>) {
   return <Screen edges={['top', 'bottom', 'left', 'right']} keyboard>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>{children}</ScrollView>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, contentStyle]}>{children}</ScrollView>
   </Screen>;
 }
 const styles = StyleSheet.create({
