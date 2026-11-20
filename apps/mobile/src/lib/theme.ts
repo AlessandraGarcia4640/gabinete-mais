@@ -313,4 +313,8 @@ export const dimensions = {
   dialogMax: 440,
   sheetGrip: 36,
   keyColumn: 112,
+  navPillWidth: 56,
+  navPillHeight: 28,
+  railItemWidth: 72,
+  railItemHeight: 60,
 };

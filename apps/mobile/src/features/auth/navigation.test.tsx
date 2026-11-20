@@ -1,7 +1,6 @@
 import { TransitionGuideScreen, TransitionCuratorScreen, TransitionCopiesScreen, TransitionCopyScreen } from '../transition/screens';
-import { GuidelineListScreen, GuidelineDetailScreen, GuidelineFormScreen, GuidelineHistoryScreen, GuidelineVersionScreen } from '../guidelines/screens';
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
-import { router } from 'expo-router';
+import { GuidelineDetailScreen, GuidelineFormScreen, GuidelineHistoryScreen, GuidelineVersionScreen } from '../guidelines/screens';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as SecureStore from 'expo-secure-store';
 import { loginResponseSchema, createContactSchema, updateContactSchema } from '@gabinete-plus/shared';
 import { taskFixture } from '../dashboard/fixtures.test-helper';
@@ -9,12 +8,18 @@ import { contactFixture } from '../contacts/fixtures.test-helper';
 import { renderRouter } from 'expo-router/testing-library';
 import RootLayout from '../../../app/_layout';
 import SessionLayout from '../../../app/(tabs)/_layout';
+import WorkLayout from '../../../app/(tabs)/(work)/_layout';
+import RoutinesLayout from '../../../app/(tabs)/(routines)/_layout';
+import CabinetLayout from '../../../app/(tabs)/(cabinet)/_layout';
+import CabinetRoute from '../../../app/(tabs)/(cabinet)/gabinete';
+import TasksRoute from '../../../app/(tabs)/(work)/tarefas';
+import GuidelinesRoute from '../../../app/(tabs)/(cabinet)/orientacoes';
 import { LoginScreen } from './login-screen';
 import { SessionScreen } from './session-screen';
 import { RoutineListScreen, RoutineDetailScreen, RoutineFormScreen } from '../routines/screens';
 import { strings } from '../../lib/strings';
 import { DashboardScreen } from '../dashboard/dashboard-screen';
-import { TaskListScreen, TaskDetailScreen, TaskFormScreen, TaskHistoryScreen } from '../tasks/screens';
+import { TaskDetailScreen, TaskFormScreen, TaskHistoryScreen } from '../tasks/screens';
 import { ChecklistListScreen, ChecklistHistoryScreen, ChecklistDetailScreen, ChecklistRunScreen, ChecklistFormScreen } from '../checklists/screens';
 import { ContactListScreen, ContactDetailScreen, ContactFormScreen } from '../contacts/screens';
 jest.mock('@shopify/flash-list', () => {
@@ -42,12 +47,14 @@ async function enter() {
 }
 async function leave() { fireEvent.press(screen.getByRole('button', { name: strings.session.logout })); await screen.findByRole('button', { name: strings.auth.submit }); }
 function renderApp(initialUrl = '/') { return renderRouter({ _layout: RootLayout, login: LoginScreen, '(tabs)/_layout': SessionLayout, '(tabs)/index': DashboardScreen,
-      '(tabs)/orientacoes': GuidelineListScreen, '(tabs)/orientacao/nova': () => <GuidelineFormScreen mode="create" />, '(tabs)/orientacao/[id]': GuidelineDetailScreen, '(tabs)/orientacao/[id]/editar': () => <GuidelineFormScreen mode="edit" />, '(tabs)/orientacao/[id]/versoes': GuidelineHistoryScreen, '(tabs)/orientacao/[id]/versao/[version]': GuidelineVersionScreen, '(tabs)/transicao': TransitionGuideScreen, '(tabs)/transicao/preparar': TransitionCuratorScreen, '(tabs)/transicao/copias': TransitionCopiesScreen, '(tabs)/transicao/copia/[id]': TransitionCopyScreen, '(tabs)/perfil': SessionScreen, '(tabs)/tarefas': TaskListScreen, '(tabs)/rotinas': RoutineListScreen, '(tabs)/rotina/[id]': RoutineDetailScreen,
-      '(tabs)/rotina/nova': () => <RoutineFormScreen mode="create" />, '(tabs)/rotina/[id]/editar': () => <RoutineFormScreen mode="edit" />,
-      '(tabs)/checklists': ChecklistListScreen, '(tabs)/execucoes': ChecklistHistoryScreen, '(tabs)/checklist/[id]': ChecklistDetailScreen,
-      '(tabs)/execucao/[id]': ChecklistRunScreen, '(tabs)/checklist/nova': () => <ChecklistFormScreen mode="create" />, '(tabs)/checklist/[id]/editar': () => <ChecklistFormScreen mode="edit" />,
-      '(tabs)/contatos': ContactListScreen, '(tabs)/contato/[id]': ContactDetailScreen, '(tabs)/contato/novo': () => <ContactFormScreen mode="create" />, '(tabs)/contato/[id]/editar': () => <ContactFormScreen mode="edit" />,
-      '(tabs)/tarefa/[id]': TaskDetailScreen, '(tabs)/tarefa/nova': () => <TaskFormScreen mode="create" />, '(tabs)/tarefa/[id]/editar': () => <TaskFormScreen mode="edit" />, '(tabs)/tarefa/[id]/historico': TaskHistoryScreen }, { initialUrl }); }
+      '(tabs)/(work)/_layout': WorkLayout, '(tabs)/(routines)/_layout': RoutinesLayout,
+      '(tabs)/(cabinet)/_layout': CabinetLayout, '(tabs)/(cabinet)/gabinete': CabinetRoute,
+      '(tabs)/(cabinet)/orientacoes': GuidelinesRoute, '(tabs)/(cabinet)/orientacao/nova': () => <GuidelineFormScreen mode="create" />, '(tabs)/(cabinet)/orientacao/[id]': GuidelineDetailScreen, '(tabs)/(cabinet)/orientacao/[id]/editar': () => <GuidelineFormScreen mode="edit" />, '(tabs)/(cabinet)/orientacao/[id]/versoes': GuidelineHistoryScreen, '(tabs)/(cabinet)/orientacao/[id]/versao/[version]': GuidelineVersionScreen, '(tabs)/(cabinet)/transicao': TransitionGuideScreen, '(tabs)/(cabinet)/transicao/preparar': TransitionCuratorScreen, '(tabs)/(cabinet)/transicao/copias': TransitionCopiesScreen, '(tabs)/(cabinet)/transicao/copia/[id]': TransitionCopyScreen, '(tabs)/perfil': SessionScreen, '(tabs)/(work)/tarefas': TasksRoute, '(tabs)/(routines)/rotinas': RoutineListScreen, '(tabs)/(routines)/rotina/[id]': RoutineDetailScreen,
+      '(tabs)/(routines)/rotina/nova': () => <RoutineFormScreen mode="create" />, '(tabs)/(routines)/rotina/[id]/editar': () => <RoutineFormScreen mode="edit" />,
+      '(tabs)/(routines)/checklists': ChecklistListScreen, '(tabs)/(routines)/execucoes': ChecklistHistoryScreen, '(tabs)/(routines)/checklist/[id]': ChecklistDetailScreen,
+      '(tabs)/(routines)/execucao/[id]': ChecklistRunScreen, '(tabs)/(routines)/checklist/nova': () => <ChecklistFormScreen mode="create" />, '(tabs)/(routines)/checklist/[id]/editar': () => <ChecklistFormScreen mode="edit" />,
+      '(tabs)/(cabinet)/contatos': ContactListScreen, '(tabs)/(cabinet)/contato/[id]': ContactDetailScreen, '(tabs)/(cabinet)/contato/novo': () => <ContactFormScreen mode="create" />, '(tabs)/(cabinet)/contato/[id]/editar': () => <ContactFormScreen mode="edit" />,
+      '(tabs)/(work)/tarefa/[id]': TaskDetailScreen, '(tabs)/(work)/tarefa/nova': () => <TaskFormScreen mode="create" />, '(tabs)/(work)/tarefa/[id]/editar': () => <TaskFormScreen mode="edit" />, '(tabs)/(work)/tarefa/[id]/historico': TaskHistoryScreen }, { initialUrl }); }
 it('rota privada abre login, sucesso navega para o gabinete e sair impede voltar à área privada', async () => {
   const previous = process.env.EXPO_PUBLIC_API_URL; process.env.EXPO_PUBLIC_API_URL = 'https://api.example.invalid';
   const fetcher = jest.spyOn(globalThis, 'fetch').mockImplementation((url) => {
@@ -56,7 +63,7 @@ it('rota privada abre login, sucesso navega para o gabinete e sair impede voltar
       user: { id: 'actor', name: 'Pessoa Fictícia', email: 'pessoa@example.invalid', role: 'ASSESSOR', isActive: true },
     }), { status: 200 }));
     if (String(url).endsWith('/auth/logout')) return Promise.resolve(new Response(null, { status: 204 }));
-    if (String(url).includes('/tasks?') || String(url).includes('/routines?')) return Promise.resolve(new Response(JSON.stringify({ items: [], nextCursor: null })));
+    if (String(url).includes('/tasks?') || String(url).includes('/routines?') || String(url).includes('/checklists/')) return Promise.resolve(new Response(JSON.stringify({ items: [], nextCursor: null })));
     return Promise.reject(new Error('Endpoint não previsto.'));
   });
   try {
@@ -67,7 +74,14 @@ it('rota privada abre login, sucesso navega para o gabinete e sair impede voltar
     fireEvent.press(screen.getByRole('button', { name: strings.auth.submit }));
     await screen.findByText('Pessoa Fictícia'); expect(screen.queryByRole('button', { name: strings.auth.submit })).toBeNull();
     await screen.findByText(strings.dashboard.emptyTasks);
-    fireEvent.press(screen.getByRole('button', { name: strings.dashboard.profileShortcut }));
+    fireEvent.press(screen.getByRole('tab', { name: strings.nav.routines }));
+    fireEvent.press(await screen.findByRole('tab', { name: strings.nav.checklists }));
+    await screen.findByRole('header', { name: strings.checklists.models });
+    fireEvent.press(screen.getByRole('tab', { name: strings.nav.home }));
+    await screen.findByText(strings.dashboard.emptyTasks);
+    fireEvent.press(screen.getByRole('tab', { name: strings.nav.routines }));
+    await screen.findByRole('header', { name: strings.nav.routines });
+    fireEvent.press(screen.getByRole('tab', { name: strings.nav.profile }));
     await screen.findByText(strings.session.roles.ASSESSOR);
     fireEvent.press(screen.getByRole('button', { name: strings.session.logout }));
     await screen.findByRole('button', { name: strings.auth.submit });
@@ -92,7 +106,7 @@ it('jornada real: login, tarefa, início, conclusão, histórico e logout', asyn
     renderApp(); await enter(); fireEvent.press(await screen.findByRole('button', { name: 'Tarefa fictícia' })); fireEvent.press(await screen.findByRole('button', { name: strings.tasks.start }));
     const complete = await screen.findByRole('button', { name: strings.tasks.complete }); await waitFor(() => expect(complete.props.accessibilityState.disabled).toBe(false)); fireEvent.press(complete);
     await screen.findByText('Concluída · Normal'); fireEvent.press(screen.getByRole('button', { name: strings.tasks.history })); await screen.findByText('Em andamento → Concluída');
-    expect(task.status).toBe('CONCLUIDA'); act(() => router.replace('/perfil')); await screen.findByRole('button', { name: strings.session.logout }); await leave();
+    expect(task.status).toBe('CONCLUIDA'); fireEvent.press(screen.getByRole('tab', { name: strings.nav.profile })); await screen.findByRole('button', { name: strings.session.logout }); await leave();
   } finally { cleanup(); fetcher.mockRestore(); if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = previous; }
 });
 it('jornada real da chefia: cadastro, erro de rede na edição, recuperação e arquivamento', async () => {
@@ -108,12 +122,12 @@ it('jornada real da chefia: cadastro, erro de rede na edição, recuperação e 
     if (path === '/contacts/contact-1') return Promise.resolve(new Response(JSON.stringify(contact))); return Promise.reject(new Error(`Endpoint não previsto: ${path}`));
   });
   try {
-    renderApp(); await enter(); fireEvent.press(screen.getByRole('button', { name: strings.contacts.title })); fireEvent.press(await screen.findByRole('button', { name: strings.contacts.create }));
+    renderApp(); await enter(); fireEvent.press(screen.getByRole('tab', { name: strings.nav.cabinet })); fireEvent.press(await screen.findByRole('button', { name: strings.nav.contacts })); fireEvent.press(await screen.findByRole('button', { name: strings.contacts.create }));
     fireEvent.press(await screen.findByRole('button', { name: strings.routines.save })); await screen.findByText(strings.contacts.validation.name);
     fireEvent.changeText(screen.getByLabelText(strings.contacts.name), 'Contato da jornada'); fireEvent.changeText(screen.getByLabelText(strings.contacts.organization), 'Tribunal fictício'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
     fireEvent.press(await screen.findByRole('button', { name: strings.contacts.edit })); fireEvent.changeText(await screen.findByLabelText(strings.contacts.notes), 'Observação preservada'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
     await screen.findByText(strings.auth.network); expect(screen.getByLabelText(strings.contacts.notes).props.value).toBe('Observação preservada'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
     fireEvent.press(await screen.findByRole('button', { name: strings.contacts.archive })); expect(contact.isArchived).toBe(false); fireEvent.press(screen.getByRole('button', { name: strings.contacts.confirmArchive })); await screen.findByText(strings.contacts.archivedLabel);
-    expect(contact.notes).toBe('Observação preservada'); act(() => router.replace('/perfil')); await screen.findByRole('button', { name: strings.session.logout }); await leave();
+    expect(contact.notes).toBe('Observação preservada'); fireEvent.press(screen.getByRole('tab', { name: strings.nav.profile })); await screen.findByRole('button', { name: strings.session.logout }); await leave();
   } finally { cleanup(); fetcher.mockRestore(); if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = previous; }
 });

@@ -1,35 +1,96 @@
-import { Stack } from 'expo-router';
+import { useGlobalSearchParams, usePathname, useRouter } from 'expo-router';
+import { TabList, TabSlot, Tabs, TabTrigger } from 'expo-router/ui';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppBar, SegmentedControl } from '../../src/components';
+import { SplitView } from '../../src/components/split-view';
+import { GuidelineListScreen } from '../../src/features/guidelines/screens';
+import { TaskListScreen } from '../../src/features/tasks/screens';
 import { strings } from '../../src/lib/strings';
-export default function SessionLayout() { return <Stack>
-  <Stack.Screen name="index" options={{ title: strings.dashboard.title }} />
-  <Stack.Screen name="tarefas" options={{ title: strings.tasks.title }} />
-  <Stack.Screen name="rotinas" options={{ title: strings.routines.title }} />
-  <Stack.Screen name="perfil" options={{ title: strings.session.title }} />
-  <Stack.Screen name="rotina/nova" options={{ title: strings.routines.create }} />
-  <Stack.Screen name="rotina/[id]" options={{ title: strings.routines.details }} />
-  <Stack.Screen name="rotina/[id]/editar" options={{ title: strings.routines.edit }} />
-  <Stack.Screen name="checklists" options={{ title: strings.checklists.models }} />
-  <Stack.Screen name="execucoes" options={{ title: strings.checklists.history }} />
-  <Stack.Screen name="checklist/nova" options={{ title: strings.checklists.create }} />
-  <Stack.Screen name="checklist/[id]" options={{ title: strings.checklists.detail }} />
-  <Stack.Screen name="checklist/[id]/editar" options={{ title: strings.checklists.edit }} />
-  <Stack.Screen name="execucao/[id]" options={{ title: strings.checklists.run }} />
-  <Stack.Screen name="contatos" options={{ title: strings.contacts.title }} />
-  <Stack.Screen name="contato/novo" options={{ title: strings.contacts.create }} />
-  <Stack.Screen name="contato/[id]" options={{ title: strings.contacts.details }} />
-  <Stack.Screen name="contato/[id]/editar" options={{ title: strings.contacts.edit }} />
-  <Stack.Screen name="tarefa/nova" options={{ title: strings.tasks.create }} />
-  <Stack.Screen name="tarefa/[id]" options={{ title: strings.tasks.details }} />
-  <Stack.Screen name="tarefa/[id]/editar" options={{ title: strings.tasks.edit }} />
-  <Stack.Screen name="tarefa/[id]/historico" options={{ title: strings.tasks.history }} />
-  <Stack.Screen name="orientacoes" options={{ title: strings.guidelines.title }} />
-  <Stack.Screen name="orientacao/nova" options={{ title: strings.guidelines.title }} />
-  <Stack.Screen name="orientacao/[id]" options={{ title: strings.guidelines.title }} />
-  <Stack.Screen name="orientacao/[id]/editar" options={{ title: strings.guidelines.title }} />
-  <Stack.Screen name="orientacao/[id]/versoes" options={{ title: strings.guidelines.title }} />
-  <Stack.Screen name="orientacao/[id]/versao/[version]" options={{ title: strings.guidelines.title }} />
-  <Stack.Screen name="transicao" options={{ title: strings.transition.title }} />
-  <Stack.Screen name="transicao/preparar" options={{ title: strings.transition.title }} />
-  <Stack.Screen name="transicao/copias" options={{ title: strings.transition.title }} />
-  <Stack.Screen name="transicao/copia/[id]" options={{ title: strings.transition.title }} />
-</Stack>; }
+import { breakpoint, spacing } from '../../src/lib/theme';
+import { MainNavigation } from '../../src/navigation/main-navigation';
+import { navigationPresentation, primaryDestinations, routeMetadata, type RoutineView } from '../../src/navigation/route-metadata';
+import { useTheme } from '../../src/providers/theme-provider';
+
+const routineViews = [
+  { value: '/rotinas', label: strings.nav.routines },
+  { value: '/checklists', label: strings.nav.checklists },
+  { value: '/execucoes', label: strings.nav.executions },
+] satisfies [{ value: RoutineView; label: string }, { value: RoutineView; label: string }, { value: RoutineView; label: string }];
+
+function AuthenticatedShell() {
+  const { width } = useWindowDimensions();
+  const { colors } = useTheme();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { id } = useGlobalSearchParams<{ id?: string }>();
+  const presentation = navigationPresentation(width);
+  const route = routeMetadata(pathname);
+  const { backTo, routineView } = route;
+  const wideSplit = width >= breakpoint.expanded && !!route.split;
+  const list = route.split === 'tasks' ? (
+    <View style={styles.body}><AppBar title={strings.nav.tasks} /><TaskListScreen selectedId={id} /></View>
+  ) : route.split === 'guidelines' ? (
+    <View style={styles.body}><AppBar title={strings.nav.guidelines} /><GuidelineListScreen selectedId={id} /></View>
+  ) : undefined;
+  const goBack = backTo ? () => {
+    if (router.canGoBack()) router.back();
+    else router.replace(backTo);
+  } : undefined;
+  const navigation = (
+    <MainNavigation
+      presentation={presentation}
+      active={presentation === 'sidebar' ? route.sidebar : route.primary}
+      pathname={pathname}
+    />
+  );
+
+  return (
+    <SafeAreaView edges={['top', 'left', 'right']} style={[styles.shell, { backgroundColor: colors.bg }]}>
+      <View style={styles.workspace}>
+        {presentation !== 'bar' && navigation}
+        <View style={styles.body}>
+          {route.title && !wideSplit && <AppBar title={route.title} onBack={goBack} />}
+          {routineView && (
+            <View style={styles.segments}>
+              <SegmentedControl<RoutineView>
+                label={strings.nav.routines}
+                options={routineViews}
+                value={routineView}
+                onChange={(value) => router.navigate(value)}
+              />
+            </View>
+          )}
+          <SplitView list={list}><TabSlot style={styles.slot} /></SplitView>
+        </View>
+      </View>
+      {presentation === 'bar' && route.top && navigation}
+    </SafeAreaView>
+  );
+}
+
+function TabRegistration() {
+  return null;
+}
+
+export default function SessionLayout() {
+  return (
+    <Tabs style={styles.shell} options={{ backBehavior: 'fullHistory' }}>
+      <TabList style={styles.hidden}>
+        {primaryDestinations.map(({ id, href }) => (
+          <TabTrigger key={id} name={id} href={href} asChild><TabRegistration /></TabTrigger>
+        ))}
+      </TabList>
+      <AuthenticatedShell />
+    </Tabs>
+  );
+}
+
+const styles = StyleSheet.create({
+  shell: { flex: 1 },
+  hidden: { display: 'none' },
+  workspace: { flex: 1, flexDirection: 'row', minHeight: 0 },
+  body: { flex: 1, minWidth: 0, minHeight: 0 },
+  slot: { flex: 1, minHeight: 0 },
+  segments: { paddingHorizontal: spacing.space4, paddingBottom: spacing.space2 },
+});

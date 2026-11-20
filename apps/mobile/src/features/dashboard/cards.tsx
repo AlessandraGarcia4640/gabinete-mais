@@ -5,9 +5,9 @@ import { createThemedStyles } from '../../providers/theme-provider';
 import { Card } from '../../components/card';
 import { TaskCard as TaskCardView } from '../../components/task-card';
 import { displayDate } from './model';
-export function TaskCard({ task, onPress }: { task: Task; onPress?: () => void }) {
+export function TaskCard({ task, onPress, selected }: { task: Task; onPress?: () => void; selected?: boolean }) {
   const deadline = task.dueDate ? displayDate(task.dueDate) : strings.dashboard.noDueDate;
-  return onPress ? <TaskCardView task={task} deadline={deadline} onPress={onPress} />
+  return onPress ? <TaskCardView task={task} deadline={deadline} onPress={onPress} selected={selected} />
     : <TaskCardView task={task} deadline={deadline} />;
 }
 export function RoutineCard({ routine, onPress }: { routine: Routine; onPress?: () => void }) {

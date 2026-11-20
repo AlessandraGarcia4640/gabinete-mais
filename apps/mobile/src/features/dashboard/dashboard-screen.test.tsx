@@ -15,7 +15,7 @@ beforeEach(async () => {
   fetcher = jest.spyOn(globalThis, 'fetch');
 });
 afterEach(() => { cleanup(); fixture.client.clear(); fetcher.mockRestore(); if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = previous; });
-it('exibe tarefas/rotinas reais do transporte, com filtros e atalhos funcionais', async () => {
+it('exibe tarefas e rotinas reais do transporte e abre as listagens', async () => {
   fetcher.mockImplementation((url) => { const parsed = new URL(String(url));
     if (parsed.pathname === '/routines') return json({ items: [routineFixture()], nextCursor: null });
     return json({ items: parsed.searchParams.get('status') === 'ABERTA' ? [taskFixture({ dueDate: '2000-01-01', isOverdue: true })] : [], nextCursor: null });
@@ -23,7 +23,7 @@ it('exibe tarefas/rotinas reais do transporte, com filtros e atalhos funcionais'
   fixture.show(<DashboardScreen />); await screen.findByText('Tarefa fictícia'); await screen.findByText('Rotina fictícia'); expect(screen.getByText(strings.dashboard.overdue)).toBeTruthy();
   const urls = fetcher.mock.calls.map((call) => new URL(String(call[0]))); expect(urls.filter((url) => url.pathname === '/tasks').every((url) => url.searchParams.get('assigneeId') === 'actor' && url.searchParams.get('limit') === '5')).toBe(true);
   expect(urls.find((url) => url.pathname === '/routines')?.searchParams.get('scheduledFor')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-  for (const [label, path] of [[strings.dashboard.tasksShortcut, '/tarefas'], [strings.dashboard.routinesShortcut, '/rotinas'], [strings.checklists.title, '/checklists'], [strings.contacts.title, '/contatos'], [strings.dashboard.profileShortcut, '/perfil']]) {
+  for (const [label, path] of [[strings.dashboard.viewTasks, '/tarefas'], [strings.dashboard.viewRoutines, '/rotinas']]) {
     fireEvent.press(screen.getByRole('button', { name: label })); expect(mockPush).toHaveBeenLastCalledWith(path === '/rotinas' ? { pathname: '/rotinas', params: { scope: 'today' } } : path);
   }
 });

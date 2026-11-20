@@ -26,7 +26,7 @@ import { ResourcePicker } from './picker';
 import type { ResourceOption } from './api';
 import { useStyles } from './styles';
 function useId() { const params = useLocalSearchParams(); const valid = userIdParamsSchema.safeParse({ id: params.id }); return valid.success ? valid.data.id : undefined; }
-export function TaskListScreen() {
+export function TaskListScreen({ selectedId }: { selectedId?: string } = {}) {
   const styles = useStyles();
   const router = useRouter(); const day = useGabineteDate(); const [mine, setMine] = useState(true); const [status, setStatus] = useState<Task['status'] | ''>('ABERTA'); const [priority, setPriority] = useState<Task['priority'] | ''>(''); const [overdue, setOverdue] = useState(false); const [input, setInput] = useState(''); const [q, setQ] = useState('');
   const query = useTasks({ mine, status, priority, q, overdue }, day); const data = useMemo(() => [...new Map((query.data?.pages.flatMap((page) => page.items) ?? []).map((task) => [task.id, task])).values()], [query.data]);
@@ -38,7 +38,7 @@ export function TaskListScreen() {
     <View style={styles.choices}><Choice label={strings.tasks.anyDeadline} selected={!overdue} onPress={() => setOverdue(false)} /><Choice label={strings.tasks.overdue} selected={overdue} onPress={() => setOverdue(true)} /></View></View>;
   return <Screen>{query.isPending ? <View>{header}<LoadingState /></View> : query.isError && !query.data ? <View>{header}<ErrorState retry={() => void query.refetch()} /></View> :
     <FlashList data={data} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} ListHeaderComponent={header} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}
-      renderItem={({ item }) => <TaskCard task={item} onPress={() => router.push({ pathname: '/tarefa/[id]', params: { id: item.id } })} />}
+      renderItem={({ item }) => <TaskCard task={item} selected={selectedId === item.id} onPress={() => router.push({ pathname: '/tarefa/[id]', params: { id: item.id } })} />}
       ListEmptyComponent={query.isError ? null : <EmptyState message={strings.tasks.empty} />} ListFooterComponent={<View style={styles.section}>{query.isError && <ErrorState updating retry={() => { if (query.isFetchNextPageError) void query.fetchNextPage(); else void query.refetch(); }} />}
         {query.hasNextPage && <Button label={strings.feedback.loadMore} loading={query.isFetchingNextPage} disabled={query.isRefetching} onPress={() => void query.fetchNextPage()} />}</View>} />}</Screen>;
 }
