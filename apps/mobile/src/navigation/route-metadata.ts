@@ -65,7 +65,6 @@ export function routeMetadata(pathname: string): RouteMetadata {
     case 'tarefa':
       return {
         primary: 'tasks', sidebar: 'tasks', backTo: '/tarefas',
-        title: action === 'historico' ? strings.tasks.history : undefined,
         split: child !== 'nova' && !action ? 'tasks' : undefined,
       };
     case 'rotinas':

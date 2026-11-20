@@ -105,7 +105,8 @@ it('jornada real: login, tarefa, início, conclusão, histórico e logout', asyn
   try {
     renderApp(); await enter(); fireEvent.press(await screen.findByRole('button', { name: 'Tarefa fictícia' })); fireEvent.press(await screen.findByRole('button', { name: strings.tasks.start }));
     const complete = await screen.findByRole('button', { name: strings.tasks.complete }); await waitFor(() => expect(complete.props.accessibilityState.disabled).toBe(false)); fireEvent.press(complete);
-    await screen.findByText(strings.tasks.closed); fireEvent.press(screen.getByRole('button', { name: strings.tasks.history })); await screen.findByText('Em andamento → Concluída');
+    await screen.findByText(strings.tasks.closed); fireEvent.press(screen.getByRole('button', { name: strings.tasks.history }));
+    await screen.findByText(strings.tasks.historyChange(strings.dashboard.status.EM_ANDAMENTO, strings.dashboard.status.CONCLUIDA), { exact: false });
     expect(task.status).toBe('CONCLUIDA'); fireEvent.press(screen.getByRole('tab', { name: strings.nav.profile })); await screen.findByRole('button', { name: strings.session.logout }); await leave();
   } finally { cleanup(); fetcher.mockRestore(); if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = previous; }
 });

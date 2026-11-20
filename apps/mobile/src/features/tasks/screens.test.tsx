@@ -191,8 +191,51 @@ it('seleção trata falha, vazio e paginação de responsáveis ativos', async (
   fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore })); fireEvent.press(await screen.findByRole('button', { name: 'Segunda Pessoa' })); expect(selected).toHaveBeenCalledWith({ id: 'second', label: 'Segunda Pessoa', role: 'APOIO' }); expect(String(fetcher.mock.calls.at(-1)?.[0])).toContain('isActive=true');
 });
 it('histórico exibe eventos e pagina sem exibir identificadores técnicos', async () => {
-  mockParams = { id: 'task-1' }; fetcher.mockImplementation((url) => response({ items: [{ id: String(url).includes('cursor=') ? 'event-2' : 'event-1', taskId: 'task-1', actorId: 'actor', type: 'STATUS_CHANGED', fromStatus: 'ABERTA', toStatus: 'EM_ANDAMENTO', fromAssigneeId: null, toAssigneeId: null, changedFields: [], createdAt: '2026-10-12T13:00:00Z' }], nextCursor: String(url).includes('cursor=') ? null : 'event-1' }));
-  fixture.show(<TaskHistoryScreen />); await screen.findByText(strings.tasks.events.STATUS_CHANGED); expect(screen.getByText('Aberta → Em andamento')).toBeTruthy(); fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore })); await waitFor(() => expect(screen.getAllByText(strings.tasks.events.STATUS_CHANGED)).toHaveLength(2));
+  mockParams = { id: 'task-1' };
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    if (!path.pathname.endsWith('/history')) return response(taskFixture());
+    const next = path.searchParams.has('cursor');
+    return response({ items: [{
+      id: next ? 'event-2' : 'event-1', taskId: 'task-1', actorId: 'actor', type: 'STATUS_CHANGED',
+      fromStatus: 'ABERTA', toStatus: 'EM_ANDAMENTO', fromAssigneeId: null, toAssigneeId: null,
+      changedFields: [], createdAt: '2026-10-12T12:00:00Z',
+    }], nextCursor: next ? null : 'event-1' });
+  });
+  fixture.show(<TaskHistoryScreen />);
+  await screen.findByText('Tarefa fictícia');
+  await screen.findByText(strings.tasks.events.STATUS_CHANGED);
+  expect(screen.getByText(strings.tasks.historyDetail('Pessoa Fictícia', strings.tasks.historyChange('Aberta', 'Em andamento')))).toBeTruthy();
+  expect(screen.getByText('12/10/2026 09:00')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore }));
+  await waitFor(() => expect(screen.getAllByText(strings.tasks.events.STATUS_CHANGED)).toHaveLength(2));
+});
+it('histórico traduz apenas campos conhecidos', async () => {
+  mockParams = { id: 'task-1' };
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    if (!path.pathname.endsWith('/history')) return response(taskFixture());
+    return response({ items: [{
+      id: 'event-1', taskId: 'task-1', actorId: 'actor', type: 'EDITED', fromStatus: null, toStatus: null,
+      fromAssigneeId: null, toAssigneeId: null, changedFields: ['dueDate', 'priority', 'campoInterno'], createdAt: '2026-10-12T12:00:00Z',
+    }], nextCursor: null });
+  });
+  fixture.show(<TaskHistoryScreen />);
+  await screen.findByText('Pessoa Fictícia · Prazo, Prioridade');
+  expect(screen.queryByText('campoInterno')).toBeNull();
+});
+it('histórico recupera a consulta após falha e mostra o estado vazio', async () => {
+  mockParams = { id: 'task-1' };
+  let offline = true;
+  fetcher.mockImplementation((url) => {
+    if (!String(url).includes('/history')) return response(taskFixture());
+    return offline ? Promise.reject(new Error('offline')) : response({ items: [], nextCursor: null });
+  });
+  fixture.show(<TaskHistoryScreen />);
+  await screen.findByText(strings.auth.network);
+  offline = false;
+  fireEvent.press(screen.getByRole('button', { name: strings.feedback.retry }));
+  await screen.findByText(strings.tasks.emptyHistory);
 });
 it('resposta tardia após logout não navega nem restaura cache', async () => {
   const saved = jest.fn(); let finish: ((response: Response) => void) | undefined; fetcher.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve; })); fixture.show(<TaskForm onSaved={saved} onCancel={() => undefined} />);

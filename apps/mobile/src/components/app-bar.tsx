@@ -8,16 +8,20 @@ import { IconButton } from './icon-button';
 
 interface AppBarProps {
   title: string;
+  subtitle?: string;
   onBack?: () => void;
   action?: ReactNode;
 }
 
-export function AppBar({ title, onBack, action }: AppBarProps) {
+export function AppBar({ title, subtitle, onBack, action }: AppBarProps) {
   const { colors } = useTheme();
   return (
     <View style={[styles.bar, { backgroundColor: colors.bg }]}>
       {onBack && <IconButton label={strings.nav.back} icon="arrow-left" onPress={onBack} />}
-      <AppText variant="heading" accessibilityRole="header" style={styles.title}>{title}</AppText>
+      <View style={styles.title}>
+        <AppText variant="heading" accessibilityRole="header">{title}</AppText>
+        {!!subtitle && <AppText variant="caption" color="inkMuted" numberOfLines={1}>{subtitle}</AppText>}
+      </View>
       {action}
     </View>
   );
@@ -28,5 +32,5 @@ const styles = StyleSheet.create({
     minHeight: dimensions.appBar, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: spacing.space2, paddingVertical: spacing.space1, gap: spacing.space1,
   },
-  title: { flex: 1, paddingHorizontal: spacing.space2 },
+  title: { flex: 1, minWidth: 0, paddingHorizontal: spacing.space2 },
 });
