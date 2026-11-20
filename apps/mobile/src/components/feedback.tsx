@@ -1,11 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 import { strings } from '../lib/strings';
-import { dimensions, radius, spacing } from '../lib/theme';
-import { useTheme } from '../providers/theme-provider';
+import { spacing } from '../lib/theme';
 import { AppText } from './app-text';
 import { Banner } from './banner';
 import { Button } from './button';
-import { Icon, type IconName } from './icon';
+import { FeedbackSymbol } from './feedback-symbol';
+import type { IconName } from './icon';
 import { Skeleton } from './skeleton';
 
 interface MessageProps {
@@ -16,12 +16,9 @@ interface MessageProps {
 }
 
 function StateMessage({ message, description, icon = 'inbox', action, error }: MessageProps & { error?: boolean }) {
-  const { colors } = useTheme();
   return (
     <View style={styles.state}>
-      <View style={[styles.symbol, { backgroundColor: error ? colors.dangerSoft : colors.surfaceSunken }]}>
-        <Icon name={icon} color={error ? 'danger' : 'inkMuted'} />
-      </View>
+      <FeedbackSymbol icon={icon} danger={error} />
       <AppText
         variant="heading"
         accessibilityRole={error ? 'alert' : 'header'}
@@ -74,9 +71,5 @@ const styles = StyleSheet.create({
     alignItems: 'center', paddingVertical: spacing.space12, paddingHorizontal: spacing.space6, gap: spacing.space3,
   },
   loading: { padding: spacing.space4, gap: spacing.space3 },
-  symbol: {
-    minWidth: dimensions.largeAvatar, minHeight: dimensions.largeAvatar, borderRadius: radius.full,
-    alignItems: 'center', justifyContent: 'center',
-  },
   center: { textAlign: 'center' },
 });

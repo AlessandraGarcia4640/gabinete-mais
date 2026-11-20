@@ -76,8 +76,22 @@ it('recuperação bloqueia conteúdo protegido e permite nova tentativa', async 
   f.show(<SessionGate><Text>{strings.session.description}</Text></SessionGate>);
   expect(screen.getByText(strings.auth.restoring)).toBeTruthy(); expect(screen.queryByText(strings.session.description)).toBeNull();
   await act(async () => { await f.manager.start(); });
-  expect(screen.getByText(strings.auth.recoveryTitle)).toBeTruthy(); fireEvent.press(screen.getByRole('button', { name: strings.auth.retry }));
+  expect(screen.getByRole('header', { name: strings.auth.recoveryTitle })).toBeTruthy();
+  expect(screen.getByRole('alert')).toHaveTextContent(strings.auth.network);
+  fireEvent.press(screen.getByRole('button', { name: strings.auth.retry }));
   await screen.findByText(strings.session.description); expect(f.manager.store.getState().status).toBe('authenticated');
+});
+it('volta ao login e descarta a sessão guardada após falha de recuperação', async () => {
+  const f = fixture();
+  await f.storage.save({ refreshToken: 'A'.repeat(43), refreshExpiresAt: '2099-01-01T00:00:00Z', apiUrl: 'https://api.example.invalid' });
+  f.refresh.mockRejectedValueOnce(new AuthFailure('storage'));
+  await f.manager.start();
+  f.show(<SessionGate><LoginScreen /></SessionGate>);
+  expect(screen.getByRole('alert')).toHaveTextContent(strings.auth.storage);
+  expect(screen.queryByRole('button', { name: strings.auth.submit })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: strings.auth.returnToLogin }));
+  await screen.findByRole('button', { name: strings.auth.submit });
+  expect(await f.storage.read()).toBeNull();
 });
 it('área autenticada identifica perfil e logout remove identidade', async () => {
   const f = fixture(); await f.manager.login({ email: 'pessoa@example.invalid', password: 'Senha-ficticia-34' }); f.show(<SessionScreen />);

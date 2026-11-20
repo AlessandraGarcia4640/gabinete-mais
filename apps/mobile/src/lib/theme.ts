@@ -318,4 +318,5 @@ export const dimensions = {
   railItemWidth: 72,
   railItemHeight: 60,
   loginMax: 480,
+  recoveryMessageMax: 280,
 };
