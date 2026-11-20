@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+.expo/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+backups/
+*.dump
+apps/api/src/generated/
