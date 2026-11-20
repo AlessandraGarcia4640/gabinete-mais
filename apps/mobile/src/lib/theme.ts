@@ -317,4 +317,5 @@ export const dimensions = {
   navPillHeight: 28,
   railItemWidth: 72,
   railItemHeight: 60,
+  loginMax: 480,
 };

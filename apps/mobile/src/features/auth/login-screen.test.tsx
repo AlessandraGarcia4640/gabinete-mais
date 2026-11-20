@@ -41,15 +41,17 @@ it('valida e-mail, desabilita envio enquanto carrega e limpa a senha após suces
   f.login.mockImplementation(() => new Promise((resolve) => { complete = resolve; }));
   f.show(); fill(); fireEvent.press(screen.getByRole('button', { name: strings.auth.submit }));
   expect(await screen.findByRole('button', { name: strings.auth.submitting })).toBeDisabled();
+  expect(screen.getByRole('button', { name: strings.auth.showPassword })).toBeDisabled();
   expect(f.login).toHaveBeenCalledWith({ email: 'pessoa@example.invalid', password: 'Senha-ficticia-34' });
   await act(async () => { complete(f.result); });
   await waitFor(() => expect(f.manager.store.getState().status).toBe('authenticated'));
   expect(screen.getByLabelText(strings.auth.password).props.value).toBe('');
 });
-it.each(['invalidCredentials', 'network', 'rateLimited'] satisfies ('invalidCredentials' | 'network' | 'rateLimited')[])('mostra mensagem institucional para %s sem dados técnicos', async (code) => {
+it.each(['invalidCredentials', 'network', 'rateLimited', 'configuration'] satisfies ('invalidCredentials' | 'network' | 'rateLimited' | 'configuration')[])('mostra mensagem institucional para %s sem dados técnicos', async (code) => {
   const f = fixture(); await f.manager.start(); f.login.mockRejectedValue(new AuthFailure(code)); f.show(); fill();
   fireEvent.press(screen.getByRole('button', { name: strings.auth.submit }));
-  await screen.findByText(strings.auth[code]); expect(screen.getByLabelText(strings.auth.password).props.value).toBe('');
+  expect(await screen.findByRole('alert')).toHaveTextContent(strings.auth[code]);
+  expect(screen.getByLabelText(strings.auth.password).props.value).toBe('');
   expect(screen.getByRole('button', { name: strings.auth.submit })).not.toBeDisabled(); expect(f.manager.store.getState().status).toBe('anonymous');
 });
 it('senha começa oculta e controle de visibilidade é acessível', async () => {
@@ -57,6 +59,16 @@ it('senha começa oculta e controle de visibilidade é acessível', async () => 
   expect(screen.getByLabelText(strings.auth.password).props.secureTextEntry).toBe(true);
   fireEvent.press(screen.getByRole('button', { name: strings.auth.showPassword }));
   expect(screen.getByLabelText(strings.auth.password).props.secureTextEntry).toBe(false); expect(screen.getByRole('button', { name: strings.auth.hidePassword })).toBeTruthy();
+});
+
+it('anuncia a confirmação de saída offline sem apresentá-la como erro de credenciais', async () => {
+  const f = fixture();
+  await f.manager.login({ email: 'pessoa@example.invalid', password: 'Senha-ficticia-34' });
+  f.logout.mockRejectedValueOnce(new AuthFailure('network'));
+  await f.manager.logout();
+  f.show();
+  expect(screen.getByRole('status')).toHaveTextContent(strings.auth.logoutOffline);
+  expect(screen.queryByRole('alert')).toBeNull();
 });
 it('recuperação bloqueia conteúdo protegido e permite nova tentativa', async () => {
   const f = fixture(); await f.storage.save({ refreshToken: 'A'.repeat(43), refreshExpiresAt: '2099-01-01T00:00:00Z', apiUrl: 'https://api.example.invalid' });
