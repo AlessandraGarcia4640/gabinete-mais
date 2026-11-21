@@ -14,7 +14,36 @@ let fixture: Awaited<ReturnType<typeof dashboardFixture>>; let fetcher: jest.Spy
 beforeEach(async () => { jest.useFakeTimers(); previous = process.env.EXPO_PUBLIC_API_URL; process.env.EXPO_PUBLIC_API_URL = 'https://api.example.invalid'; fixture = await dashboardFixture(); fetcher = jest.spyOn(globalThis, 'fetch'); mockReplace.mockClear(); });
 afterEach(() => { cleanup(); fixture.client.clear(); act(() => jest.runOnlyPendingTimers()); jest.useRealTimers(); fetcher.mockRestore(); if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = previous; });
 function chief() { const user = fixture.manager.store.getState().user; if (!user) throw new Error('Usuário ausente.'); fixture.manager.store.setState({ user: { ...user, role: 'CHEFE' } }); }
-it('guia abre visão geral e permite navegar pelas seis seções', async () => { fetcher.mockResolvedValue(new Response(JSON.stringify(guide))); fixture.show(<TransitionGuideScreen />); await screen.findByText(settings.overview); fireEvent.press(screen.getByRole('radio', { name: strings.transition.notes })); await screen.findByText(settings.notes); expect(screen.queryByRole('button', { name: strings.transition.curate })).toBeNull(); });
+it('guia apresenta as seis seções e consulta cada lista uma vez para assessor', async () => {
+  fetcher.mockImplementation((url) => {
+    const kind = new URL(String(url)).searchParams.get('section');
+    return Promise.resolve(new Response(JSON.stringify({ ...guide, section: { ...guide.section, kind } })));
+  });
+  fixture.show(<TransitionGuideScreen />);
+  await screen.findByText(settings.overview);
+  expect(screen.getByText(settings.notes)).toBeTruthy();
+  expect(screen.getAllByRole('radio')).toHaveLength(6);
+  expect(screen.queryByRole('button', { name: strings.transition.curate })).toBeNull();
+  expect(fetcher.mock.calls.map(([url]) => new URL(String(url)).searchParams.get('section')).sort())
+    .toEqual(['CONTACTS', 'GUIDELINES', 'ROUTINES', 'TASKS']);
+});
+it('erro em uma lista preserva as outras seções e refaz só a consulta que falhou', async () => {
+  const failed: string[] = [];
+  fetcher.mockImplementation((url) => {
+    const kind = new URL(String(url)).searchParams.get('section') ?? '';
+    if (kind === 'TASKS' && !failed.length) {
+      failed.push(kind);
+      return Promise.reject(new Error('Falha fictícia.'));
+    }
+    return Promise.resolve(new Response(JSON.stringify({ ...guide, section: { ...guide.section, kind } })));
+  });
+  fixture.show(<TransitionGuideScreen />);
+  await screen.findByText(settings.overview);
+  fireEvent.press(await screen.findByRole('button', { name: strings.feedback.retry }));
+  await waitFor(() => expect(screen.queryByRole('button', { name: strings.feedback.retry })).toBeNull());
+  expect(fetcher.mock.calls).toHaveLength(5);
+  expect(String(fetcher.mock.calls.at(-1)?.[0])).toContain('section=TASKS');
+});
 it('cópia lê conteúdo preservado sem consultar documentos atuais', async () => { fetcher.mockResolvedValue(new Response(JSON.stringify(copy))); fixture.show(<TransitionCopyScreen />); await screen.findByText(copy.content.overview); expect(screen.getByText(strings.transition.preserved)).toBeTruthy(); expect(fetcher.mock.calls).toHaveLength(1); expect(String(fetcher.mock.calls[0]?.[0])).toContain('/snapshots/copy-1'); });
 it('assessor não acessa curadoria por rota direta', () => { fixture.show(<TransitionCuratorScreen />); expect(screen.getByText(strings.transition.forbidden)).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled(); });
 it('curadoria preserva texto quando a revisão entra em conflito', async () => { chief(); fetcher.mockResolvedValue(new Response(JSON.stringify({ error: { code: 'TRANSITION_CONFLICT', message: 'Conflito' } }), { status: 409 })); fixture.show(<TransitionForm settings={settings} />); fireEvent.changeText(screen.getByLabelText(strings.transition.overview), 'Rascunho preservado'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await screen.findByText(strings.transition.conflict); expect(screen.getByLabelText(strings.transition.overview).props.value).toBe('Rascunho preservado'); expect(fetcher.mock.calls[0]?.[1]?.body).toContain('"expectedRevision":2'); });

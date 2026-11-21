@@ -1,5 +1,5 @@
 import { AppText } from '../../components/app-text';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -10,13 +10,10 @@ import { transitionSectionSchema, updateTransitionSchema, createTransitionSnapsh
 import { Button, Choice, Screen, Card, TextField, EmptyState, ErrorState, LoadingState } from '../../components';
 import { MarkdownContent } from '../../components/markdown-content';
 import { useSession, useSessionManager } from '../../providers/session-provider';
-import { HttpAuthApi } from '../auth/api';
-import { TransitionApi } from './api';
-import { ApiFailure } from '../../lib/api-error';
 import { strings } from '../../lib/strings';
 import { useStyles } from '../tasks/styles';
-export function useTransitionApi() { const manager = useSessionManager(); return useMemo(() => new TransitionApi(new HttpAuthApi(manager.apiUrl), manager), [manager]); }
-function errorMessage(error: Error) { if (error instanceof ApiFailure) { if (error.code === 'TRANSITION_CONFLICT') return strings.transition.conflict; if (error.code === 'TRANSITION_TOO_LARGE') return strings.transition.tooLarge; if (error.code === 'TRANSITION_NOT_FOUND') return strings.transition.notFound; if (error.code === 'FORBIDDEN') return strings.transition.forbidden; } return strings.contacts.requestError; }
+import { errorMessage, useTransitionApi } from './hooks';
+export { TransitionGuideScreen } from './guide-screen';
 type Kind = 'OVERVIEW' | 'NOTES' | typeof transitionSectionSchema.enum[keyof typeof transitionSectionSchema.enum];
 interface Item { id: string; title: string; content: string }
 function rows(kind: Kind, content: TransitionSnapshot['content']): Item[] {
@@ -29,16 +26,6 @@ function rows(kind: Kind, content: TransitionSnapshot['content']): Item[] {
 function Sections({ selected, change }: { selected: Kind; change: (kind: Kind) => void }) {
   const styles = useStyles();
   return <View style={styles.choices}><Choice label={strings.transition.overview} selected={selected === 'OVERVIEW'} onPress={() => change('OVERVIEW')} />{transitionSectionSchema.options.map((kind) => <Choice key={kind} label={strings.transition.sections[kind]} selected={selected === kind} onPress={() => change(kind)} />)}<Choice label={strings.transition.notes} selected={selected === 'NOTES'} onPress={() => change('NOTES')} /></View>; }
-export function TransitionGuideScreen() {
-  const styles = useStyles();
-  const [kind, setKind] = useState<Kind>('OVERVIEW'); const api = useTransitionApi(); const { user } = useSession(); const router = useRouter(); const section = kind === 'OVERVIEW' || kind === 'NOTES' ? 'ROUTINES' : kind;
-  const query = useInfiniteQuery({ queryKey: ['transition-guide', user?.id, section], enabled: !!user, retry: false, initialPageParam: '', queryFn: ({ pageParam, signal }) => api.read({ section, limit: 20, ...(pageParam ? { cursor: pageParam } : {}) }, signal), getNextPageParam: (page) => page.section.nextCursor || undefined });
-  const header = <View style={styles.section}><AppText variant="body">{strings.transition.introduction}</AppText><Sections selected={kind} change={setKind} /><Button label={strings.transition.copies} variant="secondary" onPress={() => router.push('/transicao/copias')} />{user?.role === 'CHEFE' && <Button label={strings.transition.curate} onPress={() => router.push('/transicao/preparar')} />}</View>;
-  if (query.isPending) return <Screen>{header}<LoadingState /></Screen>; if (query.isError && !query.data) return <Screen>{header}<ErrorState message={errorMessage(query.error)} retry={() => void query.refetch()} /></Screen>;
-  const first = query.data?.pages[0]; const content: TransitionSnapshot['content'] = { overview: first?.settings.overview ?? '', notes: first?.settings.notes ?? '', routines: [], guidelines: [], contacts: [], tasks: [] };
-  for (const page of query.data?.pages ?? []) { const s = page.section; if (s.kind === 'ROUTINES') content.routines.push(...s.items); else if (s.kind === 'GUIDELINES') content.guidelines.push(...s.items); else if (s.kind === 'CONTACTS') content.contacts.push(...s.items); else content.tasks.push(...s.items); }
-  return <Screen><FlashList data={rows(kind, content)} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} ListHeaderComponent={header} renderItem={({ item }) => <Card><AppText variant="bodyStrong" accessibilityRole="header" style={styles.label}>{item.title}</AppText>{item.content ? <MarkdownContent content={item.content} /> : <AppText variant="body">{strings.contacts.noInformation}</AppText>}</Card>} ListEmptyComponent={<EmptyState message={strings.transition.empty} />} ListFooterComponent={<View>{query.isError && <ErrorState updating retry={() => void query.refetch()} />}{kind !== 'OVERVIEW' && kind !== 'NOTES' && query.hasNextPage && <Button label={strings.feedback.loadMore} loading={query.isFetchingNextPage} onPress={() => void query.fetchNextPage()} />}</View>} /></Screen>;
-}
 export function TransitionCopiesScreen() {
   const styles = useStyles();
   const api = useTransitionApi(); const { user } = useSession(); const router = useRouter(); const query = useInfiniteQuery({ queryKey: ['transition-copies', user?.id], enabled: !!user, retry: false, initialPageParam: '', queryFn: ({ pageParam, signal }) => api.list(pageParam, signal), getNextPageParam: (page) => page.nextCursor || undefined });
