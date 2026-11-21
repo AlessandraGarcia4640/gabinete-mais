@@ -2,12 +2,12 @@ import { useGlobalSearchParams, usePathname, useRouter } from 'expo-router';
 import { TabList, TabSlot, Tabs, TabTrigger } from 'expo-router/ui';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppBar, SegmentedControl } from '../../src/components';
+import { AppBar, AppText, SegmentedControl } from '../../src/components';
 import { SplitView } from '../../src/components/split-view';
 import { GuidelineListScreen } from '../../src/features/guidelines/screens';
 import { TaskListScreen } from '../../src/features/tasks/screens';
 import { strings } from '../../src/lib/strings';
-import { breakpoint, spacing } from '../../src/lib/theme';
+import { breakpoint, size, spacing } from '../../src/lib/theme';
 import { MainNavigation } from '../../src/navigation/main-navigation';
 import { FormNavigationProvider } from '../../src/navigation/form-navigation-context';
 import { navigationPresentation, primaryDestinations, routeMetadata, type RoutineView } from '../../src/navigation/route-metadata';
@@ -51,14 +51,15 @@ function AuthenticatedShell() {
       <View style={styles.workspace}>
         {presentation !== 'bar' && navigation}
         <View style={styles.body}>
-          {route.title && !wideSplit && <AppBar title={route.title} onBack={goBack} />}
+          {route.title && !wideSplit && !routineView && <AppBar title={route.title} onBack={goBack} />}
           {routineView && (
             <View style={styles.segments}>
+              <AppText variant="titleLg" accessibilityRole="header">{route.title ?? strings.nav.routines}</AppText>
               <SegmentedControl<RoutineView>
                 label={strings.nav.routines}
                 options={routineViews}
                 value={routineView}
-                onChange={(value) => router.navigate(value)}
+                onChange={(value) => { if (value !== routineView) router.replace(value); }}
               />
             </View>
           )}
@@ -93,5 +94,5 @@ const styles = StyleSheet.create({
   workspace: { flex: 1, flexDirection: 'row', minHeight: 0 },
   body: { flex: 1, minWidth: 0, minHeight: 0 },
   slot: { flex: 1, minHeight: 0 },
-  segments: { paddingHorizontal: spacing.space4, paddingBottom: spacing.space2 },
+  segments: { width: '100%', maxWidth: size.contentMax, alignSelf: 'center', gap: spacing.space2, paddingTop: spacing.space4, paddingHorizontal: spacing.space4 },
 });

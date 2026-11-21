@@ -17,7 +17,8 @@ export const strings = {
   },
   transition: { title: 'Guia de transição', introduction: 'Conheça o gabinete pelas seis seções. As informações atuais acompanham as marcações e pendências da equipe.', overview: 'Visão geral', notes: 'Anotações de transição', sections: { ROUTINES: 'Rotinas essenciais', GUIDELINES: 'Orientações essenciais', CONTACTS: 'Contatos-chave', TASKS: 'Tarefas em aberto' }, empty: 'Nenhum item nesta seção.', curate: 'Preparar transição', copies: 'Cópias preservadas', generate: 'Gerar cópia preservada', copyTitle: 'Título da cópia', copyHelp: 'A cópia guarda as seis seções neste momento e permanece disponível após mudanças no gabinete.', preserved: 'Você está lendo uma cópia preservada. Alterações posteriores não modificam este conteúdo.', forbidden: 'Somente a chefia pode preparar e gerar a transição.', conflict: 'As informações mudaram. Reabra o guia antes de continuar.', tooLarge: 'Há mais de 100 itens em uma seção. Revise a curadoria antes de gerar a cópia.', validation: 'Confira os campos: título de até 200 caracteres e textos de até 12.000 caracteres.', saved: 'Informações salvas.', curationHelp: 'Use os cadastros abaixo para marcar rotinas e orientações essenciais e contatos-chave. As tarefas em aberto entram automaticamente.', responsibility: 'Responsável', deadline: 'Prazo', notFound: 'Cópia de transição não encontrada.', statuses: { ABERTA: 'Aberta', EM_ANDAMENTO: 'Em andamento', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada' } },
   guidelines: { title: 'Orientações', create: 'Nova orientação', edit: 'Editar orientação', name: 'Título', category: 'Categoria', content: 'Conteúdo', essential: 'Essencial para transição', preview: 'Pré-visualização', write: 'Editar texto', emptyContent: 'Digite o conteúdo para pré-visualizar.', empty: 'Nenhuma orientação encontrada.', search: 'Buscar título ou conteúdo', allCategories: 'Todas as categorias', history: 'Histórico de versões', emptyHistory: 'Nenhuma versão encontrada.', author: 'Autoria', version: (v: number) => `Versão ${String(v)}`, archive: 'Arquivar orientação', confirmArchive: 'Confirmar arquivamento', archiveHelp: 'A orientação deixará de aparecer entre as ativas. Todas as versões serão preservadas.', archived: 'Esta orientação está arquivada.', forbidden: 'Somente a chefia pode manter orientações.', notFound: 'Orientação não encontrada.', conflict: 'A orientação foi alterada por outra pessoa. Seu texto permanece aqui; reabra a versão atual para uma nova edição.', reopen: 'Reabrir orientação atual', mediaNotice: 'Imagem externa omitida.', validation: { title: 'Informe um título de até 200 caracteres.', content: 'Informe conteúdo de até 24.000 caracteres.' }, categories: { SESSOES: 'Sessões', PRAZOS: 'Prazos', ATENDIMENTO: 'Atendimento', EQUIPE: 'Equipe', MAGISTRADO: 'Magistrado', OUTROS: 'Outros' } },
-  feedback: { loading: 'Carregando informações…', error: 'Não foi possível carregar as informações.', errorHelp: 'Confira sua conexão e tente novamente.', retry: 'Tentar novamente', refresh: 'Atualizar', loadMore: 'Carregar mais', loadingMore: 'Carregando mais…', updatingError: 'Não foi possível atualizar. Tente novamente.', selectDetail: 'Selecione um item para ver os detalhes.' },
+  feedback: { loading: 'Carregando informações…', error: 'Não foi possível carregar as informações.', errorHelp: 'Confira sua conexão e tente novamente.', retry: 'Tentar novamente', refresh: 'Atualizar', loadMore: 'Carregar mais', loadingMore: 'Carregando mais…', updatingError: 'Não foi possível atualizar. Tente novamente.', selectDetail: 'Selecione um item para ver os detalhes.',
+    groupCount: (label: string, count: number) => `${label} · ${String(count)}` },
   tasks: {
     title: 'Tarefas', details: 'Detalhes da tarefa', create: 'Nova tarefa', edit: 'Editar tarefa', history: 'Histórico da tarefa', empty: 'Nenhuma tarefa encontrada.',
     formHelp: 'Tarefa é pontual, com prazo e responsável. Para algo recorrente, cadastre uma rotina.',
@@ -27,7 +28,7 @@ export const strings = {
     status: 'Status', everyStatus: 'Todos', everyPriority: 'Todas', scope: 'Escopo das tarefas',
     filters: 'Filtros', clearFilters: 'Limpar filtros', applyFilters: 'Aplicar filtros',
     overdueHelp: 'Prazo vencido e tarefa não encerrada.', emptyHelp: 'Ajuste a busca ou os filtros, ou cadastre uma nova tarefa para a equipe.',
-    upcoming: 'Próximos prazos', groupCount: (label: string, count: number) => `${label} · ${String(count)}`,
+    upcoming: 'Próximos prazos',
     assignee: 'Responsável', creator: 'Criada por', personUnknown: 'Integrante da equipe', routine: 'Rotina vinculada', contact: 'Contato vinculado', run: 'Checklist vinculado',
     selectPerson: 'Escolher responsável', self: 'Atribuir a mim', selectRoutine: 'Vincular rotina', selectContact: 'Vincular contato', selectRun: 'Vincular execução de checklist', noLink: 'Sem vínculo', clearLink: 'Remover vínculo', selectionEmpty: 'Nenhum registro disponível.',
     start: 'Iniciar tarefa', complete: 'Concluir tarefa', cancelTask: 'Cancelar tarefa', cancelTitle: 'Cancelar esta tarefa?', keepTask: 'Manter tarefa',
@@ -79,6 +80,12 @@ export const strings = {
   routines: {
     title: 'Rotinas', details: 'Detalhes da rotina', create: 'Nova rotina', edit: 'Editar rotina', save: 'Salvar', saving: 'Salvando…', cancel: 'Cancelar',
     all: 'Todas', today: 'Hoje', archived: 'Arquivadas', empty: 'Nenhuma rotina encontrada.', search: 'Buscar rotinas', searchAction: 'Buscar', allFrequencies: 'Todas as frequências',
+    scope: 'Escopo das rotinas', cadence: {
+      DIARIA: 'Diárias', SEMANAL: 'Semanais', QUINZENAL: 'Quinzenais', MENSAL: 'Mensais',
+      EVENTUAL: 'Eventuais', PERSONALIZADA: 'Personalizadas', A_DEFINIR: 'A definir',
+    },
+    dated: (date: string) => `data específica ${date}`,
+    metadata: (category: string, detail: string) => `${category} · ${detail}`,
     name: 'Título', category: 'Categoria', frequency: 'Frequência', description: 'Descrição', instructions: 'Orientações', frequencyDetails: 'Detalhes da frequência',
     specificDate: 'Data específica', datePlaceholder: 'DD/MM/AAAA', defaultPosition: 'Cargo padrão', noPosition: 'Sem cargo padrão',
     essential: 'Essencial para transição', yes: 'Sim', no: 'Não', steps: 'Passos ordenados', noSteps: 'Nenhum passo cadastrado.', addStep: 'Adicionar passo',

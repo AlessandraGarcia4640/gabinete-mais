@@ -105,7 +105,7 @@ export function TaskListScreen({ selectedId }: { selectedId?: string } = {}) {
         renderItem={({ item }) => (
           <View style={styles.item}>
             {item.kind === 'group' ? (
-              <Overline>{query.hasNextPage ? item.title : copy.groupCount(item.title, item.count)}</Overline>
+              <Overline>{query.hasNextPage ? item.title : strings.feedback.groupCount(item.title, item.count)}</Overline>
             ) : (
               <TaskListCard task={item.task} mine={mine} day={day} selected={item.task.id === selectedId}
                 onPress={() => router.push({ pathname: '/tarefa/[id]', params: { id: item.task.id } })} />

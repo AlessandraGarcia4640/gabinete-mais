@@ -1,46 +1,20 @@
 import { AppText } from '../../components/app-text';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { Screen } from '../../components/screen';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { routineFrequencySchema, userIdParamsSchema, type Routine } from '@gabinete-plus/shared';
+import { userIdParamsSchema } from '@gabinete-plus/shared';
 import { useSession } from '../../providers/session-provider';
 import { strings } from '../../lib/strings';
 import { createThemedStyles } from '../../providers/theme-provider';
 import { Button } from '../../components/button';
-import { TextField } from '../../components/text-field';
 import { EmptyState, ErrorState, LoadingState } from '../../components/feedback';
-import { RoutineCard } from '../dashboard/cards';
 import { displayDate } from '../dashboard/model';
-import { useGabineteDate } from '../dashboard/hooks';
-import { routineError, useRoutine, useRoutineList, useRoutinesApi } from './hooks';
-import { Choice } from '../../components/choice';
+import { routineError, useRoutine, useRoutinesApi } from './hooks';
 import { RoutineForm } from './form';
-export function RoutineListScreen() {
-  const styles = useStyles();
-  const params = useLocalSearchParams(); const router = useRouter(); const { user } = useSession(); const day = useGabineteDate();
-  const [mode, setMode] = useState<'all' | 'today' | 'archived'>(params.scope === 'today' ? 'today' : 'all');
-  const [input, setInput] = useState(''); const [q, setQ] = useState(''); const [frequency, setFrequency] = useState<Routine['frequency'] | ''>('');
-  const query = useRoutineList(mode, day, q, frequency);
-  const data = useMemo(() => [...new Map((query.data?.pages.flatMap((page) => page.items) ?? []).map((routine) => [routine.id, routine])).values()], [query.data]);
-  const header = <View style={styles.header}>
-    {user?.role === 'CHEFE' && <Button label={strings.routines.create} onPress={() => router.push('/rotina/nova')} />}
-    <TextField label={strings.routines.search} value={input} onChangeText={setInput} maxLength={100} returnKeyType="search" onSubmitEditing={() => setQ(input.trim())} />
-    <Button label={strings.routines.searchAction} variant="secondary" onPress={() => setQ(input.trim())} />
-    <View style={styles.choices}>{(['all', 'today', 'archived'] satisfies ('all' | 'today' | 'archived')[]).map((value) => <Choice key={value} label={strings.routines[value]} selected={mode === value} onPress={() => setMode(value)} />)}</View>
-    <View style={styles.choices}><Choice label={strings.routines.allFrequencies} selected={frequency === ''} onPress={() => setFrequency('')} />
-      {routineFrequencySchema.options.map((value) => <Choice key={value} label={strings.dashboard.frequency[value]} selected={frequency === value} onPress={() => setFrequency(value)} />)}</View>
-  </View>;
-  return <Screen>
-    {query.isPending ? <View>{header}<LoadingState /></View> : query.isError && !query.data ? <View>{header}<ErrorState retry={() => void query.refetch()} /></View> : <FlashList data={data} keyExtractor={(routine) => routine.id} contentContainerStyle={styles.content}
-      ListHeaderComponent={header} renderItem={({ item }) => <RoutineCard routine={item} onPress={() => router.push({ pathname: '/rotina/[id]', params: { id: item.id } })} />}
-      refreshing={query.isRefetching} onRefresh={() => void query.refetch()} ListEmptyComponent={query.isError ? null : <EmptyState message={strings.routines.empty} />}
-      ListFooterComponent={<View style={styles.footer}>{query.isError && <ErrorState updating retry={() => { if (query.isFetchNextPageError) void query.fetchNextPage(); else void query.refetch(); }} />}
-        {query.hasNextPage && <Button label={query.isFetchingNextPage ? strings.feedback.loadingMore : strings.feedback.loadMore} loading={query.isFetchingNextPage} disabled={query.isRefetching} onPress={() => void query.fetchNextPage()} />}</View>} />}
-  </Screen>;
-}
+export { RoutineListScreen } from './list-screen';
 export function RoutineDetailScreen() {
   const styles = useStyles();
   const params = useLocalSearchParams(); const valid = userIdParamsSchema.safeParse({ id: params.id }); const id = valid.success ? valid.data.id : undefined;

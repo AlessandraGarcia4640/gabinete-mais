@@ -43,8 +43,8 @@ it('agrupa somente a página carregada, busca por envio e resolve apenas o nome 
     ], nextCursor: null });
   });
   fixture.show(<TaskListScreen selectedId="linked-task" />);
-  await screen.findByRole('header', { name: strings.tasks.groupCount(strings.dashboard.overdue, 1) });
-  expect(screen.getByRole('header', { name: strings.tasks.groupCount(strings.tasks.upcoming, 1) })).toBeTruthy();
+  await screen.findByRole('header', { name: strings.feedback.groupCount(strings.dashboard.overdue, 1) });
+  expect(screen.getByRole('header', { name: strings.feedback.groupCount(strings.tasks.upcoming, 1) })).toBeTruthy();
   expect(screen.getByText(strings.tasks.routine)).toBeTruthy();
   expect(screen.getByText(strings.tasks.run)).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Tarefa fictícia vinculada', selected: true })).toBeTruthy();

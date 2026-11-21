@@ -20,6 +20,35 @@ it('catálogo busca, filtra e abre detalhes; assessor não recebe botão de cada
   await waitFor(() => expect(fetcher.mock.calls.some((call) => String(call[0]).includes('isArchived=true'))).toBe(true));
   fireEvent.press(await screen.findByRole('button', { name: 'Rotina fictícia' })); expect(mockPush).toHaveBeenCalledWith({ pathname: '/rotina/[id]', params: { id: 'routine-1' } });
 });
+it('escopo de hoje compartilha a frequência e não antecipa contagens de página', async () => {
+  chief();
+  mockParams = { scope: 'today' };
+  const daily = routineFixture({ title: 'Rotina diária fictícia', defaultPosition: 'APOIO', essentialForTransition: true });
+  const specific = routineFixture({ id: 'dated', title: 'Rotina com data fictícia', specificDate: '2026-11-20' });
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    const next = path.searchParams.has('cursor');
+    const page = next ? { items: [specific], nextCursor: null } : { items: [daily], nextCursor: 'next' };
+    return Promise.resolve(new Response(JSON.stringify(page)));
+  });
+  fixture.show(<RoutineListScreen />);
+  await screen.findByRole('header', { name: strings.routines.cadence.DIARIA });
+  expect(screen.queryByRole('header', { name: strings.feedback.groupCount(strings.routines.cadence.DIARIA, 1) })).toBeNull();
+  expect(screen.getByRole('button', { name: strings.routines.metadata(daily.title, strings.routines.essential) })).toBeTruthy();
+  expect(screen.getByText(strings.routines.metadata(daily.category, strings.routines.positions.APOIO))).toBeTruthy();
+  expect(new URL(String(fetcher.mock.calls[0]?.[0])).searchParams.get('scheduledFor')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore }));
+  await screen.findByRole('header', { name: strings.feedback.groupCount(strings.routines.specificDate, 1) });
+  fireEvent.press(screen.getByRole('togglebutton', { name: strings.routines.frequency }));
+  fireEvent.press(screen.getByRole('radio', { name: strings.dashboard.frequency.DIARIA }));
+  await waitFor(() => {
+    const params = new URL(String(fetcher.mock.calls.at(-1)?.[0])).searchParams;
+    expect(params.get('frequency')).toBe('DIARIA');
+    expect(params.get('scheduledFor')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.create }));
+  expect(mockPush).toHaveBeenCalledWith('/rotina/nova');
+});
 it('link direto de criação não habilita manutenção para assessor', async () => {
   fixture.show(<RoutineFormScreen mode="create" />); expect(screen.getByText(strings.routines.forbidden)).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled();
 });

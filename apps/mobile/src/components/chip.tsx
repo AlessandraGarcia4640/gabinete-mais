@@ -1,4 +1,5 @@
-import { Platform, StyleSheet } from 'react-native';
+import type { Ref } from 'react';
+import { Platform, StyleSheet, type View } from 'react-native';
 import { iconSize, line, radius, size, spacing } from '../lib/theme';
 import { useTheme } from '../providers/theme-provider';
 import { AppText } from './app-text';
@@ -13,9 +14,10 @@ interface ChipProps {
   mode?: 'filter' | 'radio';
   icon?: IconName;
   disabled?: boolean;
+  ref?: Ref<View>;
 }
 
-export function Chip({ label, context, selected, onPress, mode = 'filter', icon, disabled = false }: ChipProps) {
+export function Chip({ label, context, selected, onPress, mode = 'filter', icon, disabled = false, ref }: ChipProps) {
   const { colors } = useTheme();
   const role = mode === 'radio' ? 'radio' : Platform.OS === 'web' ? 'button' : 'togglebutton';
   const webState = mode === 'filter' && Platform.OS === 'web' ? { 'aria-pressed': selected } : {};
@@ -23,6 +25,8 @@ export function Chip({ label, context, selected, onPress, mode = 'filter', icon,
   return (
     <Control
       {...webState}
+      ref={ref}
+      aria-checked={mode === 'radio' ? selected : undefined}
       accessibilityRole={role}
       accessibilityLabel={context ? `${context}: ${label}` : label}
       accessibilityState={role === 'button' ? { disabled } : { checked: selected, disabled }}
