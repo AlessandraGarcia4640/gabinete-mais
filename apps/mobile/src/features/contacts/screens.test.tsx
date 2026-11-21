@@ -80,7 +80,11 @@ it('formulário valida obrigatórios, cria telefones e etiquetas e preserva camp
   chief(); const saved = jest.fn(); fetcher.mockRejectedValue(new Error('offline')); fixture.show(<ContactForm onSaved={saved} onCancel={() => undefined} />); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
   await screen.findByText(strings.contacts.validation.name); expect(fetcher).not.toHaveBeenCalled(); fireEvent.changeText(screen.getByLabelText(strings.contacts.name), 'Contato novo'); fireEvent.changeText(screen.getByLabelText(strings.contacts.organization), 'Tribunal');
   fireEvent.press(screen.getByRole('button', { name: strings.contacts.addPhone })); fireEvent.changeText(screen.getByLabelText(strings.contacts.phone(0)), '(51) 3333-4444');
-  fireEvent.press(screen.getByRole('button', { name: strings.contacts.addTag })); fireEvent.changeText(screen.getByLabelText(strings.contacts.tag(0)), ' SECRETARIA ');
+  fireEvent.press(screen.getByRole('button', { name: strings.contacts.addTag }));
+  fireEvent.press(screen.getByRole('button', { name: strings.contacts.confirmTag }));
+  expect(screen.getByText(strings.contacts.validation.tags)).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText(strings.contacts.tag(0)), ' SECRETARIA ');
+  fireEvent.press(screen.getByRole('button', { name: strings.contacts.confirmTag }));
   fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await screen.findByText(strings.auth.network); expect(screen.getByLabelText(strings.contacts.name).props.value).toBe('Contato novo');
   fetcher.mockImplementation(() => response(contactFixture())); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await waitFor(() => expect(saved).toHaveBeenCalled());
   expect(fetcher.mock.calls.at(-1)?.[1]?.body).toContain('"tags":["secretaria"]');
@@ -90,9 +94,23 @@ it('edição remove telefone e limpa e-mail enviando somente mudanças', async (
   fireEvent.press(screen.getByRole('button', { name: strings.contacts.removePhone(0) })); fireEvent.changeText(screen.getByLabelText(strings.contacts.email), ''); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
   await waitFor(() => expect(saved).toHaveBeenCalled()); expect(fetcher.mock.calls[0]?.[1]?.method).toBe('PATCH'); expect(updateContactSchema.parse(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)))).toEqual({ email: null, phones: [] });
 });
+it('edição altera e remove etiquetas sem modificar outros campos', async () => {
+  chief();
+  const saved = jest.fn();
+  const contact = contactFixture({ tags: ['agenda', 'plantao'] });
+  fetcher.mockImplementation(() => response({ ...contact, tags: ['plantao especial'] }));
+  fixture.show(<ContactForm contact={contact} onSaved={saved} onCancel={() => undefined} />);
+  fireEvent.press(screen.getByRole('button', { name: strings.contacts.editTag('plantao') }));
+  fireEvent.changeText(screen.getByLabelText(strings.contacts.tag(1)), 'PLANTAO ESPECIAL');
+  fireEvent.press(screen.getByRole('button', { name: strings.contacts.confirmTag }));
+  fireEvent.press(screen.getByRole('button', { name: strings.contacts.removeNamedTag('agenda') }));
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  await waitFor(() => expect(saved).toHaveBeenCalled());
+  expect(updateContactSchema.parse(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)))).toEqual({ tags: ['plantao especial'] });
+});
 it('cancelar campos alterados exige descarte explícito', async () => {
   chief(); const cancel = jest.fn(); fixture.show(<ContactForm onSaved={() => undefined} onCancel={cancel} />); fireEvent.changeText(screen.getByLabelText(strings.contacts.name), 'Rascunho');
-  fireEvent.press(screen.getByRole('button', { name: strings.routines.cancel })); expect(screen.getByText(strings.routines.unsavedTitle)).toBeTruthy(); expect(cancel).not.toHaveBeenCalled(); fireEvent.press(screen.getByRole('button', { name: strings.routines.discard })); expect(cancel).toHaveBeenCalledTimes(1);
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.cancel })); expect(screen.getByRole('header', { name: strings.routines.unsavedTitle })).toBeTruthy(); expect(cancel).not.toHaveBeenCalled(); fireEvent.press(screen.getByRole('button', { name: strings.routines.discard })); expect(cancel).toHaveBeenCalledTimes(1);
 });
 it('arquivamento exige confirmação e contato arquivado permanece consultável', async () => {
   chief(); mockParams = { id: 'contact-1' }; let archived = false; fetcher.mockImplementation((_url, init) => { if (init?.method === 'DELETE') { archived = true; return Promise.resolve(new Response(null, { status: 204 })); } return response(contactFixture({ isArchived: archived })); });

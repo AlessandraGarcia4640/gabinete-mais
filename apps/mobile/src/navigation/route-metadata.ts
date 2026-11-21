@@ -88,10 +88,7 @@ export function routeMetadata(pathname: string): RouteMetadata {
     case 'contatos':
       return { primary: 'cabinet', sidebar: 'contacts', backTo: '/gabinete' };
     case 'contato':
-      return {
-        primary: 'cabinet', sidebar: 'contacts', backTo: '/contatos',
-        title: child === 'novo' ? strings.contacts.create : action === 'editar' ? strings.contacts.edit : undefined,
-      };
+      return { primary: 'cabinet', sidebar: 'contacts', backTo: '/contatos' };
     case 'orientacoes':
       return {
         primary: 'cabinet', sidebar: 'guidelines', backTo: '/gabinete',
