@@ -76,7 +76,8 @@ it('rota privada abre login, sucesso navega para o gabinete e sair impede voltar
     await screen.findByText(strings.dashboard.emptyTasks);
     fireEvent.press(screen.getByRole('tab', { name: strings.nav.routines }));
     fireEvent.press(await screen.findByRole('tab', { name: strings.nav.checklists }));
-    await screen.findByRole('header', { name: strings.checklists.models });
+    await screen.findByRole('radio', { name: strings.checklists.active, checked: true });
+    expect(screen.getByRole('header', { name: strings.nav.routines })).toBeTruthy();
     fireEvent.press(screen.getByRole('tab', { name: strings.nav.home }));
     await screen.findByText(strings.dashboard.emptyTasks);
     fireEvent.press(screen.getByRole('tab', { name: strings.nav.routines }));

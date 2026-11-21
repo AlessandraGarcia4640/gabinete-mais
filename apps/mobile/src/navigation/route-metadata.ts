@@ -72,7 +72,7 @@ export function routeMetadata(pathname: string): RouteMetadata {
     case 'rotina':
       return { primary: 'routines', sidebar: 'routines', backTo: '/rotinas' };
     case 'checklists':
-      return { primary: 'routines', sidebar: 'checklists', top: true, title: strings.checklists.models, routineView: '/checklists' };
+      return { primary: 'routines', sidebar: 'checklists', top: true, title: nav.routines, routineView: '/checklists' };
     case 'execucoes':
       return { primary: 'routines', sidebar: 'checklists', top: true, title: strings.checklists.history, routineView: '/execucoes' };
     case 'checklist':

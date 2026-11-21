@@ -15,12 +15,17 @@ afterEach(() => { cleanup(); fixture.client.clear(); act(() => jest.runOnlyPendi
 function chief() { const user = fixture.manager.store.getState().user; if (!user) throw new Error('Usuário ausente.'); fixture.manager.store.setState({ user: { ...user, role: 'CHEFE' } }); }
 function response(value: object) { return Promise.resolve(new Response(JSON.stringify(value))); }
 it('catálogo pagina por cursor, filtra arquivo e abre modelo', async () => {
+  mockParams = { routineId: 'routine-1' };
   fetcher.mockImplementation((url) => response({ items: [templateFixture({ id: String(url).includes('cursor=') ? 'template-2' : 'template-1' })], nextCursor: String(url).includes('cursor=') ? null : 'template-1' }));
   fixture.show(<ChecklistListScreen />); await screen.findByRole('button', { name: 'Checklist fictício' }); fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore }));
   await waitFor(() => expect(screen.getAllByRole('button', { name: 'Checklist fictício' })).toHaveLength(2));
+  expect(screen.getAllByText(strings.checklists.modelSummary(strings.checklists.version(1), strings.checklists.itemCount(1)))).toHaveLength(2);
+  expect(screen.getByText(strings.checklists.createFromRoutine)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: strings.checklists.create })).toBeNull();
   expect(fetcher.mock.calls.some((call) => String(call[0]).includes('cursor=template-1'))).toBe(true);
   fireEvent.press(screen.getByRole('radio', { name: strings.checklists.archived })); await waitFor(() => expect(fetcher.mock.calls.some((call) => String(call[0]).includes('isArchived=true'))).toBe(true));
   const buttons = await screen.findAllByRole('button', { name: 'Checklist fictício' }); fireEvent.press(buttons[0]); expect(mockPush).toHaveBeenCalledWith({ pathname: '/checklist/[id]', params: { id: 'template-1' } });
+  expect(fetcher.mock.calls.map(([url]) => new URL(String(url)).searchParams.get('routineId'))).toEqual(['routine-1', 'routine-1', 'routine-1']);
 });
 it('lista vazia e falha permitem nova tentativa', async () => {
   fetcher.mockRejectedValue(new Error('offline')); fixture.show(<ChecklistListScreen />); await screen.findByText(strings.feedback.error);

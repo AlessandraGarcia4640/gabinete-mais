@@ -18,10 +18,11 @@ import { Choice } from '../../components/choice';
 import { useRoutine } from '../routines/hooks';
 import { LoadingState, EmptyState, ErrorState } from '../../components/feedback';
 import { gabineteDate, displayDate } from '../dashboard/model';
-import { checklistError, useChecklistsApi, useMarkItem, useRun, useRuns, useTemplate, useTemplates } from './hooks';
+import { checklistError, useChecklistsApi, useMarkItem, useRun, useRuns, useTemplate } from './hooks';
 import { dateInput, startFormSchema, startPayload } from './model';
 import { ChecklistForm } from './form';
 import { useStyles } from './styles';
+export { ChecklistListScreen } from './list-screen';
 function identifier(value: string | string[] | undefined): string | undefined { const valid = userIdParamsSchema.safeParse({ id: value }); return valid.success ? valid.data.id : undefined; }
 function Page<T extends { id: string }>({ data, query, header, empty, render }: { data: T[]; header: ReactElement; empty: string; render: (item: T) => ReactElement;
   query: { isPending: boolean; isError: boolean; isRefetching: boolean; isFetchingNextPage: boolean; hasNextPage: boolean; isFetchNextPageError: boolean; refetch: () => Promise<object>; fetchNextPage: () => Promise<object> } }) {
@@ -31,14 +32,6 @@ function Page<T extends { id: string }>({ data, query, header, empty, render }: 
       refreshing={query.isRefetching} onRefresh={() => void query.refetch()} ListEmptyComponent={<EmptyState message={empty} />}
       ListFooterComponent={<View style={styles.section}>{query.isError && <ErrorState updating retry={() => { if (query.isFetchNextPageError) void query.fetchNextPage(); else void query.refetch(); }} />}
         {query.hasNextPage && <Button label={strings.feedback.loadMore} loading={query.isFetchingNextPage} disabled={query.isRefetching} onPress={() => void query.fetchNextPage()} />}</View>} />}</Screen>;
-}
-export function ChecklistListScreen() {
-  const styles = useStyles();
-  const params = useLocalSearchParams(); const routineId = identifier(params.routineId); const [archived, setArchived] = useState(false); const query = useTemplates(archived, routineId); const router = useRouter();
-  return <Page query={query} data={query.data?.pages.flatMap((page) => page.items) ?? []} empty={strings.checklists.empty}
-    header={<View style={styles.section}><Button label={strings.checklists.history} variant="secondary" onPress={() => router.push('/execucoes')} />
-      <View style={styles.choices}><Choice label={strings.checklists.active} selected={!archived} onPress={() => setArchived(false)} /><Choice label={strings.checklists.archived} selected={archived} onPress={() => setArchived(true)} /></View></View>}
-    render={(item) => <Card label={item.title} onPress={() => router.push({ pathname: '/checklist/[id]', params: { id: item.id } })}><AppText variant="bodyStrong" style={styles.label}>{item.title}</AppText><AppText variant="body">{strings.checklists.version(item.version)}</AppText></Card>} />;
 }
 export function ChecklistHistoryScreen() {
   const styles = useStyles();

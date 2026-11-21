@@ -62,8 +62,9 @@ export const strings = {
       email: 'Informe um e-mail válido ou deixe o campo vazio.', notes: 'Use até 4.000 caracteres nas observações.', phones: 'Use até 10 telefones válidos, com DDD quando aplicável.', tags: 'Use até 20 etiquetas, com 1 a 40 caracteres em cada uma.' },
   },
   checklists: {
-    title: 'Checklists', models: 'Modelos de checklist', detail: 'Modelo de checklist', create: 'Novo checklist', edit: 'Editar checklist', run: 'Execução de checklist', history: 'Histórico de execuções',
+    title: 'Checklists', detail: 'Modelo de checklist', create: 'Novo checklist', edit: 'Editar checklist', run: 'Execução de checklist', history: 'Histórico de execuções',
     active: 'Ativos', archived: 'Arquivados', empty: 'Nenhum checklist encontrado.', emptyRuns: 'Nenhuma execução encontrada.', mine: 'Minhas execuções', allRuns: 'Todas as execuções',
+    modelScope: 'Exibir modelos', createFromRoutine: 'Novos checklists são criados a partir dos detalhes da rotina.',
     name: 'Título do checklist', items: 'Itens ordenados', item: (index: number) => `Item ${String(index + 1)}`, add: 'Adicionar item', remove: (index: number) => `Remover item ${String(index + 1)}`,
     up: (index: number) => `Mover item ${String(index + 1)} para cima`, down: (index: number) => `Mover item ${String(index + 1)} para baixo`,
     version: (version: number) => `Versão ${String(version)}`, progress: (done: number, total: number) => `${String(done)} de ${String(total)} itens concluídos`,
