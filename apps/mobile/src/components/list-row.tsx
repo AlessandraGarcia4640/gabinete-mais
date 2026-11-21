@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { dimensions, iconSize, radius, size, spacing } from '../lib/theme';
 import { useTheme } from '../providers/theme-provider';
@@ -19,10 +19,11 @@ interface ListRowProps {
   accessibilityLabel?: string;
   selectable?: boolean;
   selection?: 'radio';
+  ref?: Ref<View>;
 }
 
 export function ListRow({
-  title, titleVariant = 'heading', description, descriptionLines, start, end, icon, onPress, selected, accessibilityLabel, selectable, selection,
+  title, titleVariant = 'heading', description, descriptionLines, start, end, icon, onPress, selected, accessibilityLabel, selectable, selection, ref,
 }: ListRowProps) {
   const { colors } = useTheme();
   const content = (
@@ -40,9 +41,10 @@ export function ListRow({
       {onPress && !selection && <Icon name="chevron-right" size={iconSize.small} color="inkSubtle" />}
     </>
   );
-  if (!onPress) return <View style={styles.row}>{content}</View>;
+  if (!onPress) return <View ref={ref} style={styles.row}>{content}</View>;
   return (
     <Control
+      ref={ref}
       accessibilityRole={selection ?? 'button'}
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityHint={description}

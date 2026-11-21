@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { transitionGuideSchema, transitionSnapshotSchema } from '@gabinete-plus/shared';
-import { dashboardFixture } from '../dashboard/fixtures.test-helper';
+import { dashboardFixture, routineFixture } from '../dashboard/fixtures.test-helper';
 import { TransitionGuideScreen, TransitionCopiesScreen, TransitionCopyScreen, TransitionCuratorScreen, TransitionForm } from './screens';
 import { strings } from '../../lib/strings';
 const mockReplace = jest.fn(); const mockPush = jest.fn();
@@ -44,7 +44,25 @@ it('erro em uma lista preserva as outras seções e refaz só a consulta que fal
   expect(fetcher.mock.calls).toHaveLength(5);
   expect(String(fetcher.mock.calls.at(-1)?.[0])).toContain('section=TASKS');
 });
-it('cópia lê conteúdo preservado sem consultar documentos atuais', async () => { fetcher.mockResolvedValue(new Response(JSON.stringify(copy))); fixture.show(<TransitionCopyScreen />); await screen.findByText(copy.content.overview); expect(screen.getByText(strings.transition.preserved)).toBeTruthy(); expect(fetcher.mock.calls).toHaveLength(1); expect(String(fetcher.mock.calls[0]?.[0])).toContain('/snapshots/copy-1'); });
+it('cópia abre detalhes preservados dentro da tela e não consulta o guia atual', async () => {
+  const routine = routineFixture({ title: 'Rotina fictícia preservada', instructions: 'Instruções preservadas de demonstração.' });
+  const snapshot = { ...copy, content: { ...copy.content, routines: [routine] } };
+  fetcher.mockResolvedValue(new Response(JSON.stringify(snapshot)));
+  fixture.show(<TransitionCopyScreen />);
+  await screen.findByText(copy.content.overview);
+  expect(screen.getByText(strings.transition.preserved)).toBeTruthy();
+  expect(screen.getByRole('header', { name: strings.transition.notes })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: routine.title }));
+  expect(await screen.findByText(routine.instructions)).toBeTruthy();
+  expect(mockPush).not.toHaveBeenCalled();
+  expect(fetcher.mock.calls).toHaveLength(1);
+  expect(String(fetcher.mock.calls[0]?.[0])).toContain('/snapshots/copy-1');
+});
+it('consulta de cópia inexistente apresenta a mensagem do contrato', async () => {
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: 'TRANSITION_NOT_FOUND', message: 'Cópia inexistente.' } }), { status: 404 }));
+  fixture.show(<TransitionCopyScreen />);
+  expect(await screen.findByText(strings.transition.notFound)).toBeTruthy();
+});
 it('lista paginada mantém autoria, versão e acesso à cópia selecionada', async () => {
   fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ ...copy, id: 'copy-2', version: 2, title: 'Segunda cópia fictícia' }], nextCursor: '2' })));
   fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ items: [copy], nextCursor: null })));
