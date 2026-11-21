@@ -2,9 +2,14 @@ import { MarkdownIt, stringToTokens, type ASTNode, tokensToAST } from 'react-nat
 
 const markdown = new MarkdownIt({ html: false });
 const date = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short' });
+const time = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', timeStyle: 'short' });
 
 export function guidelineDate(value: string) {
   return date.format(new Date(value));
+}
+
+export function guidelineTime(value: string) {
+  return time.format(new Date(value));
 }
 
 function readableText(node: ASTNode): string {

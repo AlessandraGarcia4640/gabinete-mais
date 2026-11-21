@@ -97,7 +97,6 @@ export function routeMetadata(pathname: string): RouteMetadata {
     case 'orientacao':
       return {
         primary: 'cabinet', sidebar: 'guidelines', backTo: '/orientacoes',
-        title: action === 'versoes' ? strings.guidelines.history : action === 'versao' ? nav.guidelines : undefined,
         split: child !== 'nova' && !action ? 'guidelines' : undefined,
       };
     case 'transicao':

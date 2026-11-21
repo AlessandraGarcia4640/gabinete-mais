@@ -1,14 +1,16 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
-import { guidelineSchema } from '@gabinete-plus/shared';
+import { guidelineSchema, guidelineVersionSchema } from '@gabinete-plus/shared';
 import { dashboardFixture } from '../dashboard/fixtures.test-helper';
-import { GuidelineDetailScreen, GuidelineForm, GuidelineFormScreen, GuidelineListScreen } from './screens';
+import { GuidelineDetailScreen, GuidelineForm, GuidelineFormScreen, GuidelineHistoryScreen, GuidelineListScreen, GuidelineVersionScreen } from './screens';
 import { MarkdownContent } from '../../components/markdown-content';
 import { strings } from '../../lib/strings';
 const mockReplace = jest.fn(); const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace }), useLocalSearchParams: () => ({ id: 'guide-1' }) }));
+let mockVersion: string | undefined;
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace }), useLocalSearchParams: () => ({ id: 'guide-1', version: mockVersion }) }));
 jest.mock('@shopify/flash-list', () => { const { FlatList } = jest.requireActual<typeof import('react-native')>('react-native'); return { FlashList: FlatList }; });
 jest.mock('react-native-safe-area-context', () => { const mock = jest.requireActual<typeof import('react-native-safe-area-context/jest/mock')>('react-native-safe-area-context/jest/mock'); return mock.default; });
 const guide = guidelineSchema.parse({ id: 'guide-1', title: 'Orientação fictícia', category: 'SESSOES', content: '# Preparação\n\nTexto original.', essentialForTransition: true, isArchived: false, version: 3, createdById: 'actor', updatedById: 'actor', authorName: 'Autora fictícia', createdAt: '2026-10-12T12:00:00Z', updatedAt: '2026-10-12T12:00:00Z' });
+const previousVersion = guidelineVersionSchema.parse({ ...guide, id: 'version-2', guidelineId: guide.id, authorId: 'actor', version: 2, content: 'Texto preservado fictício.' });
 let fixture: Awaited<ReturnType<typeof dashboardFixture>>; let fetcher: jest.SpyInstance<ReturnType<typeof fetch>, Parameters<typeof fetch>>; let previous: string | undefined;
 beforeEach(async () => { jest.useFakeTimers(); previous = process.env.EXPO_PUBLIC_API_URL; process.env.EXPO_PUBLIC_API_URL = 'https://api.example.invalid'; fixture = await dashboardFixture(); fetcher = jest.spyOn(globalThis, 'fetch'); mockReplace.mockClear(); mockPush.mockClear(); });
 afterEach(() => { cleanup(); fixture.client.clear(); act(() => jest.runOnlyPendingTimers()); jest.useRealTimers(); fetcher.mockRestore(); if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = previous; });
@@ -95,3 +97,24 @@ it('pré-visualização e seleção de categoria preservam o texto do editor', a
 });
 it('cadastro valida e só navega após sucesso', async () => { chief(); fetcher.mockResolvedValue(new Response(JSON.stringify(guide))); fixture.show(<GuidelineForm />); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await screen.findByText(strings.guidelines.validation.title); expect(fetcher).not.toHaveBeenCalled(); fireEvent.changeText(screen.getByLabelText(strings.guidelines.name), 'Nova orientação'); fireEvent.changeText(screen.getByLabelText(strings.guidelines.content), 'Conteúdo fictício'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await waitFor(() => expect(mockReplace).toHaveBeenCalled()); });
 it('Markdown não carrega imagens remotas nem executa HTML', () => { const rendered = fixture.show(<MarkdownContent content={'![imagem](https://example.invalid/tracker.png)\n\n<script>alert(1)</script>'} />); expect(screen.getByText(strings.guidelines.mediaNotice)).toBeTruthy(); expect(rendered.toJSON()).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled(); });
+it('histórico indica a versão atual e abre a versão solicitada', async () => {
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ ...previousVersion, id: 'version-3', version: 3 }, previousVersion], nextCursor: null })));
+  fixture.show(<GuidelineHistoryScreen />);
+  expect(await screen.findByRole('button', { name: strings.guidelines.currentVersionLabel(strings.guidelines.version(3)) })).toBeTruthy();
+  expect(screen.getAllByText(strings.guidelines.historyMetadata('12/10/2026', '09:00', guide.authorName))).toHaveLength(2);
+  fireEvent.press(screen.getByRole('button', { name: strings.guidelines.version(2) }));
+  expect(mockPush).toHaveBeenCalledWith({ pathname: '/orientacao/[id]/versao/[version]', params: { id: guide.id, version: '2' } });
+});
+it('versão preservada permanece em leitura e indica a vigente mesmo arquivada', async () => {
+  mockVersion = '2';
+  fetcher.mockImplementation((url) => Promise.resolve(new Response(JSON.stringify(
+    String(url).endsWith('/versions/2') ? previousVersion : { ...guide, isArchived: true },
+  ))));
+  fixture.show(<GuidelineVersionScreen />);
+  await screen.findByText(strings.guidelines.previousVersion('12/10/2026', 3));
+  expect(screen.getByText(previousVersion.content)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: strings.guidelines.edit })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: strings.guidelines.openCurrent }));
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: '/orientacao/[id]', params: { id: guide.id } });
+  mockVersion = undefined;
+});
