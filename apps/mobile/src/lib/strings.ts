@@ -170,7 +170,15 @@ export const strings = {
     storage: 'Não foi possível acessar o armazenamento seguro. Tente novamente.',
     logoutOffline: 'Você saiu deste aparelho. Não foi possível confirmar o encerramento no servidor.',
   },
-  session: { title: 'Meu gabinete', welcome: 'Bem-vinda(o),', description: 'Você está conectado ao Gabinete+.',
+  session: { title: 'Meu gabinete', description: 'Você está conectado ao Gabinete+.',
     profile: 'Perfil de acesso', logout: 'Sair da conta', leaving: 'Saindo…',
+    access: 'Acesso', appearance: 'Aparência', appearanceHelp: 'Acompanha o tema claro ou escuro do aparelho.',
+    version: (version: string) => `Gabinete+ · versão ${version}`,
+    changeAddressHelp: 'Para usar outro endereço, encerre esta sessão e entre novamente no gabinete desejado.',
+    roleDetails: {
+      CHEFE: 'Cadastra, distribui e prepara a transição.',
+      ASSESSOR: 'Consulta o gabinete e executa as atividades atribuídas.',
+      APOIO: 'Consulta o gabinete e executa as atividades atribuídas.',
+    },
     roles: { CHEFE: 'Chefia', ASSESSOR: 'Assessoria', APOIO: 'Apoio' } },
 };
