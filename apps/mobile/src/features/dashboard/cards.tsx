@@ -1,21 +1,20 @@
-import { StyleSheet, Text } from 'react-native';
-import type { Routine, Task } from '@gabinete-plus/shared';
+import type { Task } from '@gabinete-plus/shared';
 import { strings } from '../../lib/strings';
-import { theme } from '../../lib/theme';
-import { Card } from '../../components/card';
-import { displayDate } from './model';
-export function TaskCard({ task, onPress }: { task: Task; onPress?: () => void }) {
-  const content = <><Text style={styles.title}>{task.title}</Text>
-    <Text style={styles.description}>{strings.dashboard.status[task.status]} · {strings.dashboard.priority[task.priority]}</Text>
-    <Text style={task.isOverdue ? styles.overdue : styles.description}>{task.dueDate ? `${strings.dashboard.dueDate}: ${displayDate(task.dueDate)}` : strings.dashboard.noDueDate}</Text>
-    {task.isOverdue && <Text style={styles.overdue}>{strings.dashboard.overdue}</Text>}
-  </>; return onPress ? <Card label={task.title} onPress={onPress}>{content}</Card> : <Card>{content}</Card>;
+import { TaskCard as TaskCardView } from '../../components/task-card';
+import type { IconName } from '../../components/icon';
+import { displayDate, previousDay } from './model';
+export function TaskCard({ task, onPress, selected, referenceDay, assignee, showRoutine }: {
+  task: Task; onPress?: () => void; selected?: boolean; referenceDay?: string; assignee?: string; showRoutine?: boolean;
+}) {
+  const deadlineToday = !!task.dueDate && task.dueDate === referenceDay;
+  const deadlineYesterday = !!task.dueDate && !!referenceDay && task.isOverdue && task.dueDate === previousDay(referenceDay);
+  const date = task.dueDate
+    ? displayDate(task.dueDate, referenceDay ? { day: '2-digit', month: '2-digit' } : undefined)
+    : strings.dashboard.noDueDate;
+  const deadline = deadlineToday ? strings.dashboard.dueToday(date) : deadlineYesterday ? strings.dashboard.dueYesterday(date) : date;
+  const links: { label: string; icon: IconName }[] = [];
+  if (referenceDay && task.checklistRunId) links.push({ label: strings.tasks.run, icon: 'list' });
+  if (showRoutine && task.routineId) links.push({ label: strings.tasks.routine, icon: 'repeat' });
+  const appearance = { task, deadline, deadlineToday, links, assignee };
+  return onPress ? <TaskCardView {...appearance} onPress={onPress} selected={selected} /> : <TaskCardView {...appearance} />;
 }
-export function RoutineCard({ routine, onPress }: { routine: Routine; onPress?: () => void }) {
-  const content = <><Text style={styles.title}>{routine.title}</Text>
-    <Text style={styles.description}>{routine.category} · {strings.dashboard.frequency[routine.frequency]}</Text>
-    {!!routine.description && <Text numberOfLines={3} style={styles.description}>{routine.description}</Text>}
-    {!!routine.instructions && <Text numberOfLines={4} style={styles.description}>{routine.instructions}</Text>}
-  </>; return onPress ? <Card label={routine.title} onPress={onPress}>{content}</Card> : <Card>{content}</Card>;
-}
-const styles = StyleSheet.create({ title: { color: theme.text, fontSize: 17, fontWeight: '600' }, description: { color: theme.muted, fontSize: 14, lineHeight: 21 }, overdue: { color: theme.danger, fontSize: 14, fontWeight: '600' } });

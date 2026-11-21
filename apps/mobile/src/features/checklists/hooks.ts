@@ -11,15 +11,24 @@ import { optimisticMark } from './model';
 export function useChecklistsApi() { const manager = useSessionManager(); return useMemo(() => new ChecklistsApi(new HttpAuthApi(manager.apiUrl), manager), [manager]); }
 export function useTemplate(id?: string) { const api = useChecklistsApi(); const { user } = useSession(); return useQuery({ queryKey: ['checklist-template', id, user?.id], enabled: !!id && !!user, retry: false, queryFn: ({ signal }) => api.template(id ?? '', signal) }); }
 export function useRun(id?: string) { const api = useChecklistsApi(); const { user } = useSession(); return useQuery({ queryKey: ['checklist-run', id, user?.id], enabled: !!id && !!user, retry: false, queryFn: ({ signal }) => api.run(id ?? '', signal) }); }
+export function useChecklistPersonName(id?: string) {
+  const api = useChecklistsApi();
+  const { user } = useSession();
+  const person = useQuery({ queryKey: ['checklist-person', id, user?.id],
+    enabled: !!id && !!user && user.id !== id, retry: false, queryFn: ({ signal }) => api.person(id ?? '', signal) });
+  return (id === user?.id ? user?.name : person.data?.name) ?? strings.checklists.personUnavailable;
+}
 export function useTemplates(archived: boolean, routineId?: string) {
   const api = useChecklistsApi(); const { user } = useSession();
   return useInfiniteQuery({ queryKey: ['checklist-templates', user?.id, archived, routineId], enabled: !!user, retry: false, initialPageParam: '',
     queryFn: ({ pageParam, signal }) => api.list({ limit: 20, isArchived: archived ? 'true' : 'false', ...(routineId ? { routineId } : {}), ...(pageParam ? { cursor: pageParam } : {}) }, signal), getNextPageParam: (page) => page.nextCursor || undefined });
 }
-export function useRuns(mine: boolean, templateId?: string) {
+export function useRuns(mine: boolean, templateId?: string, routineId?: string) {
   const api = useChecklistsApi(); const { user } = useSession();
-  return useInfiniteQuery({ queryKey: ['checklist-runs', user?.id, mine, templateId], enabled: !!user, retry: false, initialPageParam: '',
-    queryFn: ({ pageParam, signal }) => api.runs({ limit: 20, ...(mine && user ? { assigneeId: user.id } : {}), ...(templateId ? { templateId } : {}), ...(pageParam ? { cursor: pageParam } : {}) }, signal), getNextPageParam: (page) => page.nextCursor || undefined });
+  return useInfiniteQuery({ queryKey: ['checklist-runs', user?.id, mine, templateId, routineId], enabled: !!user, retry: false, initialPageParam: '',
+    queryFn: ({ pageParam, signal }) => api.runs({ limit: 20, ...(mine && user ? { assigneeId: user.id } : {}),
+      ...(templateId ? { templateId } : {}), ...(routineId ? { routineId } : {}), ...(pageParam ? { cursor: pageParam } : {}) }, signal),
+    getNextPageParam: (page) => page.nextCursor || undefined });
 }
 export function useMarkItem(id?: string) {
   const api = useChecklistsApi(); const { user } = useSession(); const manager = useSessionManager(); const client = useQueryClient(); const locked = useRef(false);

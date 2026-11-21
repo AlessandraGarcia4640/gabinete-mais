@@ -1,0 +1,111 @@
+import type { Href } from 'expo-router';
+import type { IconName } from '../components';
+import { strings } from '../lib/strings';
+import { breakpoint } from '../lib/theme';
+
+type Primary = 'home' | 'tasks' | 'routines' | 'cabinet' | 'profile';
+type Sidebar = Exclude<Primary, 'cabinet'> | 'checklists' | 'contacts' | 'guidelines' | 'transition';
+
+export interface Destination {
+  id: Primary | Sidebar;
+  label: string;
+  href: Href;
+  icon: IconName;
+}
+
+const nav = strings.nav;
+
+export const destinations: Record<Primary | Sidebar, Destination> = {
+  home: { id: 'home', label: nav.home, href: '/', icon: 'home' },
+  tasks: { id: 'tasks', label: nav.tasks, href: '/tarefas', icon: 'check-square' },
+  routines: { id: 'routines', label: nav.routines, href: '/rotinas', icon: 'repeat' },
+  cabinet: { id: 'cabinet', label: nav.cabinet, href: '/gabinete', icon: 'briefcase' },
+  profile: { id: 'profile', label: nav.profile, href: '/perfil', icon: 'user' },
+  checklists: { id: 'checklists', label: nav.checklists, href: '/checklists', icon: 'list' },
+  contacts: { id: 'contacts', label: nav.contacts, href: '/contatos', icon: 'users' },
+  guidelines: { id: 'guidelines', label: nav.guidelines, href: '/orientacoes', icon: 'book-open' },
+  transition: { id: 'transition', label: nav.transition, href: '/transicao', icon: 'compass' },
+};
+
+export const primaryDestinations = [
+  destinations.home, destinations.tasks, destinations.routines, destinations.cabinet, destinations.profile,
+];
+
+export const sidebarDestinations = [
+  destinations.home, destinations.tasks, destinations.routines, destinations.checklists,
+  destinations.contacts, destinations.guidelines, destinations.transition,
+];
+
+export const cabinetDestinations = [
+  { ...destinations.guidelines, description: strings.cabinet.guidelines },
+  { ...destinations.contacts, description: strings.cabinet.contacts },
+  { ...destinations.transition, description: strings.cabinet.transition },
+];
+
+export type RoutineView = '/rotinas' | '/checklists' | '/execucoes';
+
+type RouteMetadata = {
+  primary: Primary;
+  sidebar?: Sidebar;
+  top?: boolean;
+  title?: string;
+  backTo?: Href;
+  split?: 'tasks' | 'guidelines';
+  routineView?: RoutineView;
+};
+
+export function navigationPresentation(width: number): 'bar' | 'rail' | 'sidebar' {
+  if (width >= breakpoint.large) return 'sidebar';
+  return width >= breakpoint.medium ? 'rail' : 'bar';
+}
+
+export function routeMetadata(pathname: string): RouteMetadata {
+  const [, root, child, action] = pathname.split('/');
+  switch (root) {
+    case '':
+      return { primary: 'home', sidebar: 'home', top: true };
+    case 'tarefas':
+      return { primary: 'tasks', sidebar: 'tasks', top: true, split: 'tasks' };
+    case 'tarefa':
+      return {
+        primary: 'tasks', sidebar: 'tasks', backTo: '/tarefas',
+        split: child !== 'nova' && !action ? 'tasks' : undefined,
+      };
+    case 'rotinas':
+      return { primary: 'routines', sidebar: 'routines', top: true, title: nav.routines, routineView: '/rotinas' };
+    case 'rotina':
+      return { primary: 'routines', sidebar: 'routines', backTo: '/rotinas' };
+    case 'checklists':
+      return { primary: 'routines', sidebar: 'checklists', top: true, title: nav.routines, routineView: '/checklists' };
+    case 'execucoes':
+      return { primary: 'routines', sidebar: 'checklists', top: true, title: nav.routines, routineView: '/execucoes' };
+    case 'checklist':
+      return { primary: 'routines', sidebar: 'checklists', backTo: '/checklists' };
+    case 'execucao':
+      return { primary: 'routines', sidebar: 'checklists', backTo: '/execucoes' };
+    case 'gabinete':
+      return { primary: 'cabinet', top: true };
+    case 'contatos':
+      return { primary: 'cabinet', sidebar: 'contacts', backTo: '/gabinete' };
+    case 'contato':
+      return { primary: 'cabinet', sidebar: 'contacts', backTo: '/contatos' };
+    case 'orientacoes':
+      return {
+        primary: 'cabinet', sidebar: 'guidelines', backTo: '/gabinete',
+        split: 'guidelines',
+      };
+    case 'orientacao':
+      return {
+        primary: 'cabinet', sidebar: 'guidelines', backTo: '/orientacoes',
+        split: child !== 'nova' && !action ? 'guidelines' : undefined,
+      };
+    case 'transicao':
+      return {
+        primary: 'cabinet', sidebar: 'transition', backTo: child ? '/transicao' : '/gabinete',
+      };
+    case 'perfil':
+      return { primary: 'profile', sidebar: 'profile', top: true };
+    default:
+      return { primary: 'home', sidebar: 'home' };
+  }
+}

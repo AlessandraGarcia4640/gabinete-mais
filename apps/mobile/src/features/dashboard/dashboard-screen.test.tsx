@@ -2,7 +2,16 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react-native';
 import { DashboardScreen } from './dashboard-screen';
 import { dashboardFixture, routineFixture, taskFixture } from './fixtures.test-helper';
 import { strings } from '../../lib/strings';
-const mockPush = jest.fn(); jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
+import type { Href } from 'expo-router';
+import type { ReactElement } from 'react';
+import { cloneElement as mockCloneElement } from 'react';
+import { gabineteDate } from './model';
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockPush }),
+  Link: ({ href, children }: { href: Href; children: ReactElement<{ onPress: () => void }> }) =>
+    mockCloneElement(children, { onPress: () => mockPush(href) }),
+}));
 jest.mock('react-native-safe-area-context', () => {
   const mock = jest.requireActual<typeof import('react-native-safe-area-context/jest/mock')>('react-native-safe-area-context/jest/mock'); return mock.default;
 });
@@ -15,17 +24,36 @@ beforeEach(async () => {
   fetcher = jest.spyOn(globalThis, 'fetch');
 });
 afterEach(() => { cleanup(); fixture.client.clear(); fetcher.mockRestore(); if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = previous; });
-it('exibe tarefas/rotinas reais do transporte, com filtros e atalhos funcionais', async () => {
+it('exibe tarefas e rotinas reais do transporte e abre as listagens', async () => {
   fetcher.mockImplementation((url) => { const parsed = new URL(String(url));
     if (parsed.pathname === '/routines') return json({ items: [routineFixture()], nextCursor: null });
     return json({ items: parsed.searchParams.get('status') === 'ABERTA' ? [taskFixture({ dueDate: '2000-01-01', isOverdue: true })] : [], nextCursor: null });
   });
   fixture.show(<DashboardScreen />); await screen.findByText('Tarefa fictícia'); await screen.findByText('Rotina fictícia'); expect(screen.getByText(strings.dashboard.overdue)).toBeTruthy();
+  expect(screen.getByRole('header', { name: strings.dashboard.greeting('Pessoa') })).toBeTruthy();
+  expect(screen.getByText(strings.dashboard.routineSummary('Diária', 'Administrativo'))).toBeTruthy();
   const urls = fetcher.mock.calls.map((call) => new URL(String(call[0]))); expect(urls.filter((url) => url.pathname === '/tasks').every((url) => url.searchParams.get('assigneeId') === 'actor' && url.searchParams.get('limit') === '5')).toBe(true);
   expect(urls.find((url) => url.pathname === '/routines')?.searchParams.get('scheduledFor')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-  for (const [label, path] of [[strings.dashboard.tasksShortcut, '/tarefas'], [strings.dashboard.routinesShortcut, '/rotinas'], [strings.checklists.title, '/checklists'], [strings.contacts.title, '/contatos'], [strings.dashboard.profileShortcut, '/perfil']]) {
-    fireEvent.press(screen.getByRole('button', { name: label })); expect(mockPush).toHaveBeenLastCalledWith(path === '/rotinas' ? { pathname: '/rotinas', params: { scope: 'today' } } : path);
+  for (const [label, path] of [[strings.dashboard.viewTasks, '/tarefas'], [strings.dashboard.viewRoutines, '/rotinas']]) {
+    fireEvent.press(screen.getByRole('link', { name: label })); expect(mockPush).toHaveBeenLastCalledWith(path === '/rotinas' ? { pathname: '/rotinas', params: { scope: 'today' } } : path);
   }
+  fireEvent.press(screen.getByRole('button', { name: 'Rotina fictícia' }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/rotina/[id]', params: { id: 'routine-1' } });
+  fireEvent.press(screen.getByRole('button', { name: strings.tasks.create }));
+  expect(mockPush).toHaveBeenLastCalledWith('/tarefa/nova');
+});
+it('identifica prazo de hoje e checklist vinculado sem repetir o responsável', async () => {
+  const today = gabineteDate();
+  fetcher.mockImplementation((url) => json({
+    items: new URL(String(url)).searchParams.get('status') === 'ABERTA'
+      ? [taskFixture({ dueDate: today, checklistRunId: 'execucao-ficticia' })]
+      : [],
+    nextCursor: null,
+  }));
+  fixture.show(<DashboardScreen />);
+  await screen.findByText(strings.tasks.run);
+  expect(screen.getByText(strings.dashboard.dueToday(`${today.slice(8)}/${today.slice(5, 7)}`))).toBeTruthy();
+  expect(screen.queryByText('Pessoa Fictícia')).toBeNull();
 });
 it('estado vazio não é mostrado enquanto tarefas ainda carregam', async () => {
   let finish: (response: Response) => void = () => { throw new Error('Promise ausente.'); };

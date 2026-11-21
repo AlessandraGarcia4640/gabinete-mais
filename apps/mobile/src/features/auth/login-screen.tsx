@@ -1,16 +1,14 @@
 import { useConnection } from './connection-gate';
 import { useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginRequestSchema, type LoginRequest } from '@gabinete-plus/shared';
-import { AuthScreen } from '../../components/auth-screen';
-import { Card } from '../../components/card';
-import { Button } from '../../components/button';
-import { TextField } from '../../components/text-field';
+import { AppText, AuthScreen, Banner, Button, IconButton, TextField, Toast } from '../../components';
 import { strings } from '../../lib/strings';
-import { theme } from '../../lib/theme';
+import { dimensions, spacing } from '../../lib/theme';
+import { BrandMark } from '../../navigation/brand-mark';
 import { useSession, useSessionManager } from '../../providers/session-provider';
 import { authMessage } from './errors';
 export function LoginScreen() {
@@ -25,28 +23,72 @@ export function LoginScreen() {
     finally { form.setValue('password', ''); login.reset(); }
   }
   const notice = message ?? (session.errorCode ? strings.auth[session.errorCode] : null);
-  return <AuthScreen><View style={styles.header}>
-    <Text style={styles.brand}>{strings.brand}</Text><Text accessibilityRole="header" style={styles.title}>{strings.auth.title}</Text>
-    <Text style={styles.description}>{strings.auth.subtitle}</Text>
-  </View><Card style={styles.form}>
-    <Controller control={form.control} name="email" render={({ field, fieldState }) => <TextField label={strings.auth.email} value={field.value}
-      onChangeText={field.onChange} onBlur={field.onBlur} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}
-      autoComplete="email" textContentType="username" editable={!login.isPending} placeholder={strings.auth.emailPlaceholder}
-      errorText={fieldState.error ? strings.auth.invalidEmail : undefined} />} />
-    <Controller control={form.control} name="password" render={({ field, fieldState }) => <TextField label={strings.auth.password} value={field.value}
-      onChangeText={field.onChange} onBlur={field.onBlur} secureTextEntry={!visible} autoCapitalize="none" autoCorrect={false}
-      autoComplete="current-password" textContentType="password" editable={!login.isPending} returnKeyType="go"
-      onSubmitEditing={() => { if (!login.isPending) void form.handleSubmit(submit)(); }}
-      errorText={fieldState.error ? strings.auth.invalidPassword : undefined} />} />
-    <Button label={visible ? strings.auth.hidePassword : strings.auth.showPassword} secondary disabled={login.isPending} onPress={() => setVisible(!visible)} />
-    {!!notice && <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{notice}</Text>}
-    <Button label={login.isPending ? strings.auth.submitting : strings.auth.submit} loading={login.isPending} onPress={() => void form.handleSubmit(submit)()} />
-  </Card>{connection && <Button label={strings.connection.change} secondary disabled={login.isPending} onPress={() => { void connection.reset().catch(() => setMessage(strings.connection.storageError)); }} />}<Text style={styles.footnote}>{strings.auth.invitation}</Text>
-    {Platform.OS === 'web' && <Text style={styles.footnote}>{strings.auth.webSession}</Text>}
-  </AuthScreen>;
+  const offlineLogout = !message && session.errorCode === 'logoutOffline';
+  const send = () => { if (!login.isPending) void form.handleSubmit(submit)(); };
+  return (
+    <AuthScreen contentStyle={styles.page}>
+      <BrandMark large />
+      <View style={styles.header}>
+        <AppText variant="display" accessibilityRole="header">{strings.auth.title}</AppText>
+        <AppText variant="body" color="inkMuted">{strings.auth.subtitle}</AppText>
+      </View>
+      <View style={styles.form}>
+        {!!notice && !offlineLogout && <Banner tone="danger" message={notice} />}
+        <Controller
+          control={form.control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <TextField
+              label={strings.auth.email} value={field.value}
+              onChangeText={field.onChange} onBlur={field.onBlur} keyboardType="email-address"
+              autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="username"
+              editable={!login.isPending} placeholder={strings.auth.emailPlaceholder}
+              errorText={fieldState.error ? strings.auth.invalidEmail : undefined}
+            />
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="password"
+          render={({ field, fieldState }) => (
+            <TextField
+              label={strings.auth.password} value={field.value}
+              onChangeText={field.onChange} onBlur={field.onBlur} secureTextEntry={!visible}
+              autoCapitalize="none" autoCorrect={false} autoComplete="current-password" textContentType="password"
+              editable={!login.isPending} returnKeyType="go" onSubmitEditing={send}
+              errorText={fieldState.error ? strings.auth.invalidPassword : undefined}
+              accessory={(
+                <IconButton
+                  label={visible ? strings.auth.hidePassword : strings.auth.showPassword}
+                  icon={visible ? 'eye-off' : 'eye'}
+                  disabled={login.isPending}
+                  onPress={() => setVisible(!visible)}
+                />
+              )}
+            />
+          )}
+        />
+        <Button label={login.isPending ? strings.auth.submitting : strings.auth.submit} loading={login.isPending} onPress={send} />
+      </View>
+      <View style={styles.footer}>
+        <AppText variant="caption" color="inkMuted" style={styles.footnote}>{strings.auth.invitation}</AppText>
+        {Platform.OS === 'web' && <AppText variant="caption" color="inkMuted" style={styles.footnote}>{strings.auth.webSession}</AppText>}
+        {connection && (
+          <Button
+            label={strings.connection.change} variant="ghost" size="sm" disabled={login.isPending}
+            onPress={() => { void connection.reset().catch(() => setMessage(strings.connection.storageError)); }}
+          />
+        )}
+      </View>
+      {!!notice && offlineLogout && <Toast message={notice} />}
+    </AuthScreen>
+  );
 }
-const styles = StyleSheet.create({ header: { gap: 14 }, brand: { color: theme.primary, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  title: { color: theme.text, fontSize: 30, fontWeight: '700' }, description: { color: theme.muted, fontSize: 16, lineHeight: 24 },
-  form: { padding: 22, gap: 20, marginBottom: 0 },
-  error: { backgroundColor: theme.errorSurface, color: theme.danger, padding: 14, borderRadius: 10, fontSize: 14, lineHeight: 21 },
-  footnote: { color: theme.muted, fontSize: 13, textAlign: 'center', lineHeight: 20 } });
+
+const styles = StyleSheet.create({
+  page: { maxWidth: dimensions.loginMax, paddingTop: spacing.space16, paddingBottom: spacing.space8, gap: spacing.space8 },
+  header: { gap: spacing.space2 },
+  form: { gap: spacing.space5 },
+  footer: { alignItems: 'center', gap: spacing.space3 },
+  footnote: { textAlign: 'center' },
+});

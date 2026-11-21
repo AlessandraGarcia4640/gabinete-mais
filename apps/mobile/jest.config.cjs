@@ -4,6 +4,7 @@ module.exports = {
   resolver: require.resolve('react-native/jest/resolver'),
   testEnvironment: require.resolve('react-native/jest/react-native-env'),
   setupFiles: [require.resolve('react-native/jest/setup'), require.resolve('jest-expo/src/preset/setup')],
+  setupFilesAfterEnv: [...(expoPreset.setupFilesAfterEnv ?? []), '<rootDir>/jest.setup.ts'],
   testMatch: ['**/src/**/*.test.ts', '**/src/**/*.test.tsx'],
   moduleNameMapper: {
     ...expoPreset.moduleNameMapper,
@@ -15,5 +16,5 @@ module.exports = {
     '^@gabinete-plus/shared$': '<rootDir>/../../packages/shared/src/index.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-  transformIgnorePatterns: ['node_modules/(?!(?:\\.pnpm|(?:jest-)?react-native(?:-.*)?|@react-native(?:-community)?|expo(?:-.*)?|@expo(?:/.*)?|@tanstack/.*|zustand|zod|react-hook-form|@hookform/.*|@react-navigation/.*)(?:/|$))'],
+  transformIgnorePatterns: ['node_modules/(?!(?:\\.pnpm|(?:jest-)?react-native(?:-.*)?|@react-native(?:-community)?|expo(?:-.*)?|@expo(?:/.*)?|@expo-google-fonts/.*|@tanstack/.*|zustand|zod|react-hook-form|@hookform/.*|@react-navigation/.*)(?:/|$))'],
 };

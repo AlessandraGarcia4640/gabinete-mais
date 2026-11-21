@@ -8,8 +8,12 @@ import { TaskForm } from './form';
 import { ResourcePicker } from './picker';
 import { strings } from '../../lib/strings';
 const mockPush = jest.fn(); const mockReplace = jest.fn(); let mockParams: { id?: string } = {};
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace }), useLocalSearchParams: () => mockParams }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockPush, replace: mockReplace, canGoBack: () => false }),
+  useLocalSearchParams: () => mockParams,
+}));
 jest.mock('@shopify/flash-list', () => { const { FlatList } = jest.requireActual<typeof import('react-native')>('react-native'); return { FlashList: FlatList }; });
+jest.mock('../../navigation/prevent-form-removal', () => ({ PreventFormRemoval: () => null }));
 jest.mock('react-native-safe-area-context', () => { const mock = jest.requireActual<typeof import('react-native-safe-area-context/jest/mock')>('react-native-safe-area-context/jest/mock'); return mock.default; });
 let fixture: Awaited<ReturnType<typeof dashboardFixture>>; let fetcher: jest.SpyInstance<ReturnType<typeof fetch>, Parameters<typeof fetch>>; let previous: string | undefined;
 beforeEach(async () => { jest.useFakeTimers(); previous = process.env.EXPO_PUBLIC_API_URL; process.env.EXPO_PUBLIC_API_URL = 'https://api.example.invalid'; fixture = await dashboardFixture(); fetcher = jest.spyOn(globalThis, 'fetch'); mockParams = {}; mockPush.mockClear(); mockReplace.mockClear(); });
@@ -17,12 +21,56 @@ afterEach(() => { cleanup(); fixture.client.clear(); act(() => jest.runOnlyPendi
 function chief() { const user = fixture.manager.store.getState().user; if (!user) throw new Error('Usuário ausente.'); fixture.manager.store.setState({ user: { ...user, role: 'CHEFE' } }); }
 function response(value: object) { return Promise.resolve(new Response(JSON.stringify(value))); }
 function person(id = 'other', name = 'Outra Pessoa') { return userDetailSchema.parse({ id, name, email: `${id}@example.invalid`, role: 'APOIO', isActive: true, position: 'APOIO', createdAt: '2026-10-12T12:00:00Z', updatedAt: '2026-10-12T12:00:00Z' }); }
+it('mantém o rascunho da edição quando salvar e a atualização em segundo plano falham', async () => {
+  mockParams = { id: 'task-1' };
+  fetcher.mockImplementation((url) => String(url).endsWith('/tasks/task-1')
+    ? Promise.reject(new Error('Falha de rede fictícia.')) : response({ items: [], nextCursor: null }));
+  fetcher.mockImplementationOnce(() => response(taskFixture()));
+  fixture.show(<TaskFormScreen mode="edit" />);
+  fireEvent.changeText(await screen.findByLabelText(strings.tasks.name), 'Rascunho de tarefa fictícia');
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  await waitFor(() => expect(fixture.client.getQueryState(['task', 'task-1', 'actor'])?.status).toBe('error'));
+  expect(screen.getByLabelText(strings.tasks.name)).toHaveProp('value', 'Rascunho de tarefa fictícia');
+  expect(screen.getByRole('alert')).toHaveTextContent(strings.auth.network);
+});
 it('catálogo pagina, filtra status/prioridade/atraso/equipe e abre detalhe', async () => {
   fetcher.mockImplementation((url) => response({ items: [taskFixture({ id: String(url).includes('cursor=') ? 'second' : 'task-1', title: String(url).includes('cursor=') ? 'Segunda tarefa' : 'Tarefa fictícia' })], nextCursor: String(url).includes('cursor=') ? null : 'next' }));
   fixture.show(<TaskListScreen />); await screen.findByRole('button', { name: 'Tarefa fictícia' }); expect(String(fetcher.mock.calls[0]?.[0])).toContain('assigneeId=actor');
   fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore })); await screen.findByRole('button', { name: 'Segunda tarefa' }); fireEvent.press(screen.getByRole('button', { name: 'Tarefa fictícia' })); expect(mockPush).toHaveBeenCalledWith({ pathname: '/tarefa/[id]', params: { id: 'task-1' } });
-  fireEvent.press(screen.getByRole('radio', { name: strings.tasks.all })); fireEvent.press(screen.getByRole('radio', { name: strings.dashboard.status.CONCLUIDA })); fireEvent.press(screen.getByRole('radio', { name: strings.dashboard.priority.ALTA })); fireEvent.press(screen.getByRole('radio', { name: strings.tasks.overdue }));
+  fireEvent.press(screen.getByRole('tab', { name: strings.tasks.all }));
+  fireEvent.press(screen.getByRole('button', { name: strings.tasks.filters }));
+  fireEvent.press(await screen.findByRole('radio', { name: strings.dashboard.status.CONCLUIDA }));
+  fireEvent.press(screen.getByRole('radio', { name: strings.dashboard.priority.ALTA }));
+  fireEvent.press(screen.getByRole('switch', { name: strings.tasks.overdue }));
+  expect(new URL(String(fetcher.mock.calls.at(-1)?.[0])).searchParams.get('priority')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: strings.tasks.applyFilters }));
   await waitFor(() => { const url = new URL(String(fetcher.mock.calls.at(-1)?.[0])); expect(url.searchParams.has('assigneeId')).toBe(false); expect(url.searchParams.get('status')).toBe('CONCLUIDA'); expect(url.searchParams.get('priority')).toBe('ALTA'); expect(url.searchParams.get('overdue')).toBe('true'); }); await screen.findByRole('button', { name: 'Tarefa fictícia' });
+});
+it('agrupa somente a página carregada, busca por envio e resolve apenas o nome de outra pessoa', async () => {
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    if (path.pathname === '/users/other') return response(person());
+    return response({ items: [
+      taskFixture({ id: 'overdue-task', title: 'Prazo fictício vencido', dueDate: '2026-10-12', isOverdue: true }),
+      taskFixture({ id: 'linked-task', title: 'Tarefa fictícia vinculada', assigneeId: 'other', routineId: 'routine-1', checklistRunId: 'run-1' }),
+    ], nextCursor: null });
+  });
+  fixture.show(<TaskListScreen selectedId="linked-task" />);
+  await screen.findByRole('header', { name: strings.feedback.groupCount(strings.dashboard.overdue, 1) });
+  expect(screen.getByRole('header', { name: strings.feedback.groupCount(strings.tasks.upcoming, 1) })).toBeTruthy();
+  expect(screen.getByText(strings.tasks.routine)).toBeTruthy();
+  expect(screen.getByText(strings.tasks.run)).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Tarefa fictícia vinculada', selected: true })).toBeTruthy();
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes('/users/'))).toBe(false);
+  fireEvent.press(screen.getByRole('tab', { name: strings.tasks.all }));
+  await screen.findByText('Outra Pessoa');
+  expect(screen.getByText('Pessoa Fictícia')).toBeTruthy();
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes('/users/actor'))).toBe(false);
+  const search = screen.getByLabelText(strings.tasks.search);
+  fireEvent.changeText(search, '  tarefa fictícia  ');
+  expect(new URL(String(fetcher.mock.calls.at(-1)?.[0])).searchParams.has('q')).toBe(false);
+  fireEvent(search, 'submitEditing');
+  await waitFor(() => expect(fetcher.mock.calls.some(([url]) => new URL(String(url)).searchParams.get('q') === 'tarefa fictícia')).toBe(true));
 });
 it('catálogo exibe falha recuperável e vazio', async () => {
   fetcher.mockRejectedValue(new Error('offline')); fixture.show(<TaskListScreen />); await screen.findByText(strings.feedback.error); fetcher.mockImplementation(() => response({ items: [], nextCursor: null })); fireEvent.press(screen.getByRole('button', { name: strings.feedback.retry })); await screen.findByText(strings.tasks.empty);
@@ -34,12 +82,33 @@ it('responsável inicia e conclui mas não edita tarefa criada por outra pessoa'
   }); fixture.show(<TaskDetailScreen />); await screen.findByRole('button', { name: strings.tasks.start }); expect(screen.queryByRole('button', { name: strings.tasks.edit })).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: strings.tasks.start })); await screen.findByRole('button', { name: strings.tasks.complete }); fireEvent.press(screen.getByRole('button', { name: strings.tasks.complete })); await screen.findByText(strings.dashboard.status.CONCLUIDA, { exact: false }); expect(screen.queryByRole('button', { name: strings.tasks.complete })).toBeNull();
 });
-it('conclusão recusada por checklist incompleto preserva status e oferece vínculo', async () => {
+it('checklist incompleto desabilita conclusão, informa o progresso e oferece o vínculo', async () => {
   mockParams = { id: 'task-1' }; const task = taskFixture({ status: 'EM_ANDAMENTO', checklistRunId: 'run-1', createdById: 'other' }); fetcher.mockImplementation((url, init) => {
     if (String(url).includes('/users/')) return response(person()); if (String(url).includes('/checklists/')) return response(runFixture());
     if (init?.method === 'PATCH') return Promise.resolve(new Response(JSON.stringify({ error: { code: 'TASK_CHECKLIST_INCOMPLETE', message: 'Conflito' } }), { status: 409 })); return response(task);
-  }); fixture.show(<TaskDetailScreen />); await screen.findByRole('button', { name: strings.tasks.complete }); fireEvent.press(screen.getByRole('button', { name: strings.tasks.complete })); await screen.findByText(strings.tasks.incomplete); expect(screen.getByText(strings.dashboard.status.EM_ANDAMENTO, { exact: false })).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'Checklist fictício' })); expect(mockPush).toHaveBeenCalledWith({ pathname: '/execucao/[id]', params: { id: 'run-1' } });
+  }); fixture.show(<TaskDetailScreen />);
+  await screen.findByText(strings.tasks.incomplete);
+  const complete = screen.getByRole('button', { name: strings.tasks.complete, disabled: true });
+  fireEvent.press(complete);
+  expect(fetcher.mock.calls.some(([, init]) => init?.method === 'PATCH')).toBe(false);
+  expect(screen.getByText(strings.dashboard.status.EM_ANDAMENTO, { exact: false })).toBeTruthy();
+  const run = runFixture();
+  expect(screen.getByText(strings.checklists.progressFraction(run.completedItems, run.totalItems))).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Checklist fictício' })); expect(mockPush).toHaveBeenCalledWith({ pathname: '/execucao/[id]', params: { id: 'run-1', taskId: task.id } });
+});
+it('erro de conclusão recebido após mudança concorrente no checklist continua mapeado', async () => {
+  mockParams = { id: 'task-1' };
+  const task = taskFixture({ status: 'EM_ANDAMENTO', checklistRunId: 'run-1' });
+  fetcher.mockImplementation((url, init) => {
+    if (String(url).includes('/checklists/')) return response(runFixture({ status: 'CONCLUIDA', completedAt: '2026-10-12T13:00:00Z' }));
+    if (init?.method === 'PATCH') return Promise.resolve(new Response(JSON.stringify({ error: { code: 'TASK_CHECKLIST_INCOMPLETE', message: 'Conflito' } }), { status: 409 }));
+    return response(task);
+  });
+  fixture.show(<TaskDetailScreen />);
+  const complete = await screen.findByRole('button', { name: strings.tasks.complete, disabled: false });
+  fireEvent.press(complete);
+  await screen.findByText(strings.tasks.incomplete);
+  expect(fetcher.mock.calls.some(([, init]) => init?.method === 'PATCH')).toBe(true);
 });
 it('consulta de outra pessoa não oferece comandos nem edição por link direto', async () => {
   mockParams = { id: 'task-1' }; fetcher.mockImplementation((url) => response(String(url).includes('/users/') ? person() : taskFixture({ createdById: 'other', assigneeId: 'other' })));
@@ -50,12 +119,16 @@ it('link direto de edição respeita criador e tarefa encerrada', async () => {
 });
 it('cancelamento exige confirmação e preserva tarefa consultável', async () => {
   mockParams = { id: 'task-1' }; let task = taskFixture(); fetcher.mockImplementation((_url, init) => { if (init?.method === 'PATCH') task = taskFixture({ status: 'CANCELADA' }); return response(task); });
-  fixture.show(<TaskDetailScreen />); await screen.findByRole('button', { name: strings.tasks.cancelTask }); fireEvent.press(screen.getByRole('button', { name: strings.tasks.cancelTask })); expect(fetcher.mock.calls.some((call) => call[1]?.method === 'PATCH')).toBe(false);
+  fixture.show(<TaskDetailScreen />); fireEvent.press(await screen.findByRole('button', { name: strings.nav.more })); fireEvent.press(screen.getByRole('button', { name: strings.tasks.cancelTask })); expect(fetcher.mock.calls.some((call) => call[1]?.method === 'PATCH')).toBe(false);
   fireEvent.press(screen.getByRole('button', { name: strings.tasks.confirmCancel })); await screen.findByText(strings.dashboard.status.CANCELADA, { exact: false }); expect(screen.getByText('Tarefa fictícia')).toBeTruthy(); expect(screen.queryByRole('button', { name: strings.tasks.edit })).toBeNull();
+  expect(screen.queryByRole('button', { name: strings.tasks.assign })).toBeNull();
+  expect(screen.getByText(strings.tasks.closed)).toBeTruthy();
 });
 it('criador reatribui por seleção de nome e confirmação', async () => {
   mockParams = { id: 'task-1' }; let task = taskFixture(); fetcher.mockImplementation((url, init) => { if (String(url).includes('/users?')) return response({ items: [person()], nextCursor: null }); if (String(url).includes('/users/')) return response(person()); if (init?.method === 'PATCH') task = taskFixture({ assigneeId: 'other' }); return response(task); });
-  fixture.show(<TaskDetailScreen />); await screen.findByRole('button', { name: strings.tasks.assign }); fireEvent.press(screen.getByRole('button', { name: strings.tasks.assign })); fireEvent.press(await screen.findByRole('button', { name: 'Outra Pessoa' }));
+  fixture.show(<TaskDetailScreen />); await screen.findByRole('button', { name: strings.tasks.assign }); fireEvent.press(screen.getByRole('button', { name: strings.tasks.assign })); fireEvent.press(await screen.findByRole('radio', { name: 'Outra Pessoa' }));
+  expect(screen.getByRole('radio', { name: 'Outra Pessoa', checked: true })).toBeTruthy();
+  expect(screen.getByText(strings.session.roles.APOIO)).toBeTruthy();
   expect(fetcher.mock.calls.some((call) => call[1]?.method === 'PATCH')).toBe(false); fireEvent.press(screen.getByRole('button', { name: strings.tasks.confirmAssign })); await waitFor(() => expect(fetcher.mock.calls.some((call) => String(call[0]).endsWith('/assignee') && call[1]?.body === JSON.stringify({ assigneeId: 'other' }))).toBe(true)); await screen.findByText('Outra Pessoa');
 });
 it('formulário valida prazo, mantém rascunho em falha e envia tarefa própria', async () => {
@@ -79,8 +152,44 @@ it('cadastro pela chefia vincula responsável, rotina, contato e checklist compa
 });
 it('edição limpa orientações e prazo por PATCH mínimo', async () => {
   const saved = jest.fn(); const task = taskFixture({ instructions: 'Original', dueDate: '2026-10-12' }); fetcher.mockImplementation(() => response(taskFixture({ instructions: '', dueDate: null })));
-  fixture.show(<TaskForm task={task} onSaved={saved} onCancel={() => undefined} />); fireEvent.changeText(screen.getByLabelText(strings.tasks.instructions), ''); fireEvent.changeText(screen.getByLabelText(strings.tasks.dueDate), ''); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  fixture.show(<TaskForm task={task} onSaved={saved} onCancel={() => undefined} />);
+  expect(screen.getByText(strings.tasks.linksFixed)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: strings.tasks.selectRoutine })).toBeNull();
+  fireEvent.changeText(screen.getByLabelText(strings.tasks.instructions), ''); fireEvent.changeText(screen.getByLabelText(strings.tasks.dueDate), ''); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
   await waitFor(() => expect(saved).toHaveBeenCalled()); expect(updateTaskSchema.parse(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)))).toEqual({ instructions: '', dueDate: null });
+});
+it('voltar e cancelar preservam o rascunho até o descarte ser confirmado', () => {
+  const cancel = jest.fn();
+  fixture.show(<TaskForm onSaved={() => undefined} onCancel={cancel} />);
+  fireEvent.changeText(screen.getByLabelText(strings.tasks.name), 'Rascunho fictício');
+  fireEvent.press(screen.getByRole('button', { name: strings.nav.back }));
+  expect(screen.getByRole('header', { name: strings.routines.unsavedTitle })).toBeTruthy();
+  expect(cancel).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.continueEditing }));
+  expect(screen.getByLabelText(strings.tasks.name).props.value).toBe('Rascunho fictício');
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.cancel }));
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.discard }));
+  expect(cancel).toHaveBeenCalledTimes(1);
+  expect(fetcher).not.toHaveBeenCalled();
+});
+it('retirar a rotina pela folha também retira a execução vinculada do envio', async () => {
+  const saved = jest.fn();
+  fetcher.mockImplementation((url, init) => {
+    if (init?.method === 'POST') return response(taskFixture());
+    const path = new URL(String(url));
+    return response({ items: path.pathname === '/routines' ? [routineFixture()] : [runFixture()], nextCursor: null });
+  });
+  fixture.show(<TaskForm onSaved={saved} onCancel={() => undefined} />);
+  fireEvent.changeText(screen.getByLabelText(strings.tasks.name), 'Tarefa sem vínculos');
+  fireEvent.press(screen.getByRole('button', { name: strings.tasks.selectRun }));
+  fireEvent.press(await screen.findByRole('button', { name: /Checklist fictício/ }));
+  expect(screen.getByText('Rotina fictícia')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: strings.tasks.selectRoutine }));
+  fireEvent.press(await screen.findByRole('button', { name: strings.tasks.noLink }));
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  await waitFor(() => expect(saved).toHaveBeenCalled());
+  const write = fetcher.mock.calls.find(([, init]) => init?.method === 'POST');
+  expect(createTaskSchema.parse(JSON.parse(String(write?.[1]?.body)))).toMatchObject({ routineId: null, checklistRunId: null });
 });
 it('perda de perfil de chefia permite retomar cadastro como tarefa própria', async () => {
   chief(); const saved = jest.fn(); fetcher.mockImplementation((url) => String(url).includes('/users?') ? response({ items: [person()], nextCursor: null }) : response(taskFixture())); fixture.show(<TaskForm onSaved={saved} onCancel={() => undefined} />);
@@ -92,11 +201,54 @@ it('perda de perfil de chefia permite retomar cadastro como tarefa própria', as
 it('seleção trata falha, vazio e paginação de responsáveis ativos', async () => {
   fetcher.mockRejectedValue(new Error('offline')); const selected = jest.fn(); fixture.show(<ResourcePicker kind="person" assigneeId="actor" routineId={null} onSelect={selected} onClose={() => undefined} />); await screen.findByText(strings.feedback.error);
   fetcher.mockImplementation((url) => response({ items: [person(String(url).includes('cursor=') ? 'second' : 'other', String(url).includes('cursor=') ? 'Segunda Pessoa' : 'Outra Pessoa')], nextCursor: String(url).includes('cursor=') ? null : 'other' })); fireEvent.press(screen.getByRole('button', { name: strings.feedback.retry })); await screen.findByRole('button', { name: 'Outra Pessoa' });
-  fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore })); fireEvent.press(await screen.findByRole('button', { name: 'Segunda Pessoa' })); expect(selected).toHaveBeenCalledWith({ id: 'second', label: 'Segunda Pessoa' }); expect(String(fetcher.mock.calls.at(-1)?.[0])).toContain('isActive=true');
+  fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore })); fireEvent.press(await screen.findByRole('button', { name: 'Segunda Pessoa' })); expect(selected).toHaveBeenCalledWith({ id: 'second', label: 'Segunda Pessoa', role: 'APOIO' }); expect(String(fetcher.mock.calls.at(-1)?.[0])).toContain('isActive=true');
 });
 it('histórico exibe eventos e pagina sem exibir identificadores técnicos', async () => {
-  mockParams = { id: 'task-1' }; fetcher.mockImplementation((url) => response({ items: [{ id: String(url).includes('cursor=') ? 'event-2' : 'event-1', taskId: 'task-1', actorId: 'actor', type: 'STATUS_CHANGED', fromStatus: 'ABERTA', toStatus: 'EM_ANDAMENTO', fromAssigneeId: null, toAssigneeId: null, changedFields: [], createdAt: '2026-10-12T13:00:00Z' }], nextCursor: String(url).includes('cursor=') ? null : 'event-1' }));
-  fixture.show(<TaskHistoryScreen />); await screen.findByText(strings.tasks.events.STATUS_CHANGED); expect(screen.getByText('Aberta → Em andamento')).toBeTruthy(); fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore })); await waitFor(() => expect(screen.getAllByText(strings.tasks.events.STATUS_CHANGED)).toHaveLength(2));
+  mockParams = { id: 'task-1' };
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    if (!path.pathname.endsWith('/history')) return response(taskFixture());
+    const next = path.searchParams.has('cursor');
+    return response({ items: [{
+      id: next ? 'event-2' : 'event-1', taskId: 'task-1', actorId: 'actor', type: 'STATUS_CHANGED',
+      fromStatus: 'ABERTA', toStatus: 'EM_ANDAMENTO', fromAssigneeId: null, toAssigneeId: null,
+      changedFields: [], createdAt: '2026-10-12T12:00:00Z',
+    }], nextCursor: next ? null : 'event-1' });
+  });
+  fixture.show(<TaskHistoryScreen />);
+  await screen.findByText('Tarefa fictícia');
+  await screen.findByText(strings.tasks.events.STATUS_CHANGED);
+  expect(screen.getByText(strings.tasks.historyDetail('Pessoa Fictícia', strings.tasks.historyChange('Aberta', 'Em andamento')))).toBeTruthy();
+  expect(screen.getByText('12/10/2026 09:00')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore }));
+  await waitFor(() => expect(screen.getAllByText(strings.tasks.events.STATUS_CHANGED)).toHaveLength(2));
+});
+it('histórico traduz apenas campos conhecidos', async () => {
+  mockParams = { id: 'task-1' };
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    if (!path.pathname.endsWith('/history')) return response(taskFixture());
+    return response({ items: [{
+      id: 'event-1', taskId: 'task-1', actorId: 'actor', type: 'EDITED', fromStatus: null, toStatus: null,
+      fromAssigneeId: null, toAssigneeId: null, changedFields: ['dueDate', 'priority', 'campoInterno'], createdAt: '2026-10-12T12:00:00Z',
+    }], nextCursor: null });
+  });
+  fixture.show(<TaskHistoryScreen />);
+  await screen.findByText('Pessoa Fictícia · Prazo, Prioridade');
+  expect(screen.queryByText('campoInterno')).toBeNull();
+});
+it('histórico recupera a consulta após falha e mostra o estado vazio', async () => {
+  mockParams = { id: 'task-1' };
+  let offline = true;
+  fetcher.mockImplementation((url) => {
+    if (!String(url).includes('/history')) return response(taskFixture());
+    return offline ? Promise.reject(new Error('offline')) : response({ items: [], nextCursor: null });
+  });
+  fixture.show(<TaskHistoryScreen />);
+  await screen.findByText(strings.auth.network);
+  offline = false;
+  fireEvent.press(screen.getByRole('button', { name: strings.feedback.retry }));
+  await screen.findByText(strings.tasks.emptyHistory);
 });
 it('resposta tardia após logout não navega nem restaura cache', async () => {
   const saved = jest.fn(); let finish: ((response: Response) => void) | undefined; fetcher.mockImplementation(() => new Promise<Response>((resolve) => { finish = resolve; })); fixture.show(<TaskForm onSaved={saved} onCancel={() => undefined} />);
@@ -106,5 +258,5 @@ it('resposta tardia após logout não navega nem restaura cache', async () => {
 it('modal oculta o formulário e fechar restaura os controles acessíveis', async () => {
   chief(); fetcher.mockImplementation(() => response({ items: [person()], nextCursor: null })); fixture.show(<TaskForm onSaved={() => undefined} onCancel={() => undefined} />);
   fireEvent.press(screen.getByRole('button', { name: strings.tasks.selectPerson })); await screen.findByRole('button', { name: 'Outra Pessoa' }); expect(screen.queryByLabelText(strings.tasks.name)).toBeNull();
-  expect(screen.getAllByRole('button', { name: strings.routines.cancel })).toHaveLength(1); fireEvent.press(screen.getByRole('button', { name: strings.routines.cancel })); await screen.findByLabelText(strings.tasks.name);
+  expect(screen.queryByRole('button', { name: strings.routines.cancel })).toBeNull(); fireEvent.press(screen.getByRole('button', { name: strings.nav.close })); await screen.findByLabelText(strings.tasks.name);
 });
