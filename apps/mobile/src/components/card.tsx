@@ -5,11 +5,11 @@ import { useTheme } from '../providers/theme-provider';
 import { Control } from './control';
 
 type CardProps = PropsWithChildren<{ flat?: boolean; style?: StyleProp<ViewStyle> } & (
-  { onPress: () => void; label: string; selected?: boolean } |
-  { onPress?: never; label?: never; selected?: never }
+  { onPress: () => void; label: string; hint?: string; selected?: boolean } |
+  { onPress?: never; label?: never; hint?: never; selected?: never }
 )>;
 
-export function Card({ children, style, flat = false, onPress, label, selected }: CardProps) {
+export function Card({ children, style, flat = false, onPress, label, hint, selected }: CardProps) {
   const { colors, shadow } = useTheme();
   const surface = {
     backgroundColor: flat ? colors.surfaceSunken : selected ? colors.brandSoft : colors.surface,
@@ -21,6 +21,7 @@ export function Card({ children, style, flat = false, onPress, label, selected }
     <Control
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityHint={hint}
       accessibilityState={selected === undefined ? undefined : { selected }}
       aria-current={selected || undefined}
       onPress={onPress}

@@ -124,7 +124,16 @@ it('jornada real da chefia: cadastro, erro de rede na edição, recuperação e 
     if (path === '/contacts/contact-1') return Promise.resolve(new Response(JSON.stringify(contact))); return Promise.reject(new Error(`Endpoint não previsto: ${path}`));
   });
   try {
-    renderApp(); await enter(); fireEvent.press(screen.getByRole('tab', { name: strings.nav.cabinet })); fireEvent.press(await screen.findByRole('button', { name: strings.nav.contacts })); fireEvent.press(await screen.findByRole('button', { name: strings.contacts.create }));
+    renderApp();
+    await enter();
+    fireEvent.press(screen.getByRole('tab', { name: strings.nav.cabinet }));
+    await screen.findByText(strings.cabinet.description);
+    expect(screen.getByRole('button', { name: strings.nav.guidelines }).props.accessibilityHint).toBe(strings.cabinet.guidelines);
+    expect(screen.getByRole('button', { name: strings.nav.transition }).props.accessibilityHint).toBe(strings.cabinet.transition);
+    const contactsLink = screen.getByRole('button', { name: strings.nav.contacts });
+    expect(contactsLink.props.accessibilityHint).toBe(strings.cabinet.contacts);
+    fireEvent.press(contactsLink);
+    fireEvent.press(await screen.findByRole('button', { name: strings.contacts.create }));
     fireEvent.press(await screen.findByRole('button', { name: strings.routines.save })); await screen.findByText(strings.contacts.validation.name);
     fireEvent.changeText(screen.getByLabelText(strings.contacts.name), 'Contato da jornada'); fireEvent.changeText(screen.getByLabelText(strings.contacts.organization), 'Tribunal fictício'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
     fireEvent.press(await screen.findByRole('button', { name: strings.contacts.edit })); fireEvent.changeText(await screen.findByLabelText(strings.contacts.notes), 'Observação preservada'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));

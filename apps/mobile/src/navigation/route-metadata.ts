@@ -36,7 +36,11 @@ export const sidebarDestinations = [
   destinations.contacts, destinations.guidelines, destinations.transition,
 ];
 
-export const cabinetDestinations = [destinations.guidelines, destinations.contacts, destinations.transition];
+export const cabinetDestinations = [
+  { ...destinations.guidelines, description: strings.cabinet.guidelines },
+  { ...destinations.contacts, description: strings.cabinet.contacts },
+  { ...destinations.transition, description: strings.cabinet.transition },
+];
 
 export type RoutineView = '/rotinas' | '/checklists' | '/execucoes';
 
