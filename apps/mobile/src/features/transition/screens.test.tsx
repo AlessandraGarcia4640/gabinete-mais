@@ -46,5 +46,33 @@ it('erro em uma lista preserva as outras seções e refaz só a consulta que fal
 });
 it('cópia lê conteúdo preservado sem consultar documentos atuais', async () => { fetcher.mockResolvedValue(new Response(JSON.stringify(copy))); fixture.show(<TransitionCopyScreen />); await screen.findByText(copy.content.overview); expect(screen.getByText(strings.transition.preserved)).toBeTruthy(); expect(fetcher.mock.calls).toHaveLength(1); expect(String(fetcher.mock.calls[0]?.[0])).toContain('/snapshots/copy-1'); });
 it('assessor não acessa curadoria por rota direta', () => { fixture.show(<TransitionCuratorScreen />); expect(screen.getByText(strings.transition.forbidden)).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled(); });
-it('curadoria preserva texto quando a revisão entra em conflito', async () => { chief(); fetcher.mockResolvedValue(new Response(JSON.stringify({ error: { code: 'TRANSITION_CONFLICT', message: 'Conflito' } }), { status: 409 })); fixture.show(<TransitionForm settings={settings} />); fireEvent.changeText(screen.getByLabelText(strings.transition.overview), 'Rascunho preservado'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await screen.findByText(strings.transition.conflict); expect(screen.getByLabelText(strings.transition.overview).props.value).toBe('Rascunho preservado'); expect(fetcher.mock.calls[0]?.[1]?.body).toContain('"expectedRevision":2'); });
-it('geração valida título e navega para a cópia retornada', async () => { chief(); fetcher.mockResolvedValue(new Response(JSON.stringify(copy))); fixture.show(<TransitionForm settings={settings} />); fireEvent.press(screen.getByRole('button', { name: strings.transition.generate })); await screen.findByText(strings.transition.validation); expect(fetcher).not.toHaveBeenCalled(); fireEvent.changeText(screen.getByLabelText(strings.transition.copyTitle), 'Estado fictício'); fireEvent.press(screen.getByRole('button', { name: strings.transition.generate })); await waitFor(() => expect(mockReplace).toHaveBeenCalledWith({ pathname: '/transicao/copia/[id]', params: { id: copy.id } })); });
+it('curadoria preserva texto quando a revisão entra em conflito', async () => { chief(); fetcher.mockResolvedValue(new Response(JSON.stringify({ error: { code: 'TRANSITION_CONFLICT', message: 'Conflito' } }), { status: 409 })); fixture.show(<TransitionForm settings={settings} />); fireEvent.changeText(screen.getByLabelText(strings.transition.overview), 'Rascunho preservado'); fireEvent.press(screen.getByRole('button', { name: strings.transition.saveSettings })); await screen.findByText(strings.transition.conflict); expect(screen.getByLabelText(strings.transition.overview).props.value).toBe('Rascunho preservado'); expect(fetcher.mock.calls[0]?.[1]?.body).toContain('"expectedRevision":2'); });
+it('geração só envia o título validado após confirmar a cópia', async () => {
+  chief();
+  fetcher.mockResolvedValue(new Response(JSON.stringify(copy)));
+  fixture.show(<TransitionForm settings={settings} />);
+  fireEvent.press(screen.getByRole('button', { name: strings.transition.generate }));
+  await screen.findByText(strings.transition.validation);
+  expect(fetcher).not.toHaveBeenCalled();
+  fireEvent.changeText(screen.getByLabelText(strings.transition.copyTitle), 'Estado fictício');
+  fireEvent.press(screen.getByRole('button', { name: strings.transition.generate }));
+  const confirm = await screen.findByRole('button', { name: strings.transition.confirmGeneration });
+  expect(fetcher).not.toHaveBeenCalled();
+  fireEvent.press(confirm);
+  await waitFor(() => expect(mockReplace).toHaveBeenCalledWith({ pathname: '/transicao/copia/[id]', params: { id: copy.id } }));
+});
+it('salva informações, mostra sucesso e usa a nova revisão na geração', async () => {
+  chief();
+  const updated = { ...settings, notes: 'Anotações atualizadas de demonstração.', revision: 3 };
+  fetcher.mockImplementation((_url, init) => Promise.resolve(new Response(JSON.stringify(init?.method === 'PATCH' ? updated : copy))));
+  fixture.show(<TransitionForm settings={settings} />);
+  fireEvent.changeText(screen.getByLabelText(strings.transition.copyTitle), 'Título preservado fictício');
+  fireEvent.changeText(screen.getByLabelText(strings.transition.notes), updated.notes);
+  expect(screen.getByRole('button', { name: strings.transition.generate }).props.accessibilityState.disabled).toBe(true);
+  fireEvent.press(screen.getByRole('button', { name: strings.transition.saveSettings }));
+  await screen.findByText(strings.transition.saved);
+  fireEvent.press(screen.getByRole('button', { name: strings.transition.generate }));
+  fireEvent.press(await screen.findByRole('button', { name: strings.transition.confirmGeneration }));
+  await waitFor(() => expect(mockReplace).toHaveBeenCalled());
+  expect(JSON.parse(String(fetcher.mock.calls.at(-1)?.[1]?.body))).toEqual({ title: 'Título preservado fictício', expectedRevision: 3 });
+});
