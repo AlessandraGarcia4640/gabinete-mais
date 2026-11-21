@@ -92,7 +92,7 @@ export function routeMetadata(pathname: string): RouteMetadata {
     case 'orientacoes':
       return {
         primary: 'cabinet', sidebar: 'guidelines', backTo: '/gabinete',
-        title: nav.guidelines, split: 'guidelines',
+        split: 'guidelines',
       };
     case 'orientacao':
       return {

@@ -13,17 +13,9 @@ import { MarkdownContent } from '../../components/markdown-content';
 import { useSession, useSessionManager } from '../../providers/session-provider';
 import { strings } from '../../lib/strings';
 import { useStyles } from '../tasks/styles';
-import { guidelineError, useGuideline, useGuidelineHistory, useGuidelines, useGuidelinesApi } from './hooks';
+import { guidelineError, useGuideline, useGuidelineHistory, useGuidelinesApi } from './hooks';
+export { GuidelineListScreen } from './list-screen';
 function useId() { const params = useLocalSearchParams(); const valid = userIdParamsSchema.safeParse({ id: params.id }); return valid.success ? valid.data.id : undefined; }
-export function GuidelineListScreen({ selectedId }: { selectedId?: string } = {}) {
-  const styles = useStyles();
-  const { user } = useSession(); const router = useRouter(); const [archived, setArchived] = useState(false); const [input, setInput] = useState(''); const [q, setQ] = useState(''); const [category, setCategory] = useState<Guideline['category'] | ''>(''); const query = useGuidelines(archived, q, category);
-  const header = <View style={styles.section}>{user?.role === 'CHEFE' && <Button label={strings.guidelines.create} onPress={() => router.push('/orientacao/nova')} />}<TextField label={strings.guidelines.search} value={input} onChangeText={setInput} maxLength={100} /><Button label={strings.routines.searchAction} variant="secondary" onPress={() => setQ(input.trim())} />
-    <View style={styles.choices}><Choice label={strings.contacts.active} selected={!archived} onPress={() => setArchived(false)} /><Choice label={strings.contacts.archived} selected={archived} onPress={() => setArchived(true)} /></View><View style={styles.choices}><Choice label={strings.guidelines.allCategories} selected={!category} onPress={() => setCategory('')} />{guidelineCategorySchema.options.map((value) => <Choice key={value} label={strings.guidelines.categories[value]} selected={category === value} onPress={() => setCategory(value)} />)}</View></View>;
-  return <Screen>{query.isPending ? <View>{header}<LoadingState /></View> : query.isError && !query.data ? <View>{header}<ErrorState retry={() => void query.refetch()} /></View> : <FlashList data={[...new Map((query.data?.pages.flatMap((page) => page.items) ?? []).map((g) => [g.id, g])).values()]} keyExtractor={(g) => g.id} contentContainerStyle={styles.content} ListHeaderComponent={header} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}
-    renderItem={({ item }) => <Card label={item.title} selected={selectedId === item.id} onPress={() => router.push({ pathname: '/orientacao/[id]', params: { id: item.id } })}><AppText variant="bodyStrong" style={styles.label}>{item.title}</AppText><AppText variant="body">{strings.guidelines.categories[item.category]} · {strings.guidelines.version(item.version)}</AppText>{item.essentialForTransition && <AppText variant="body">{strings.guidelines.essential}</AppText>}</Card>}
-    ListEmptyComponent={<EmptyState message={strings.guidelines.empty} />} ListFooterComponent={<View style={styles.section}>{query.isError && <ErrorState updating retry={() => void (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch())} />}{query.hasNextPage && <Button label={strings.feedback.loadMore} loading={query.isFetchingNextPage} onPress={() => void query.fetchNextPage()} />}</View>} />}</Screen>;
-}
 export function GuidelineDetailScreen() {
   const styles = useStyles();
   const id = useId(); const query = useGuideline(id); const api = useGuidelinesApi(); const { user } = useSession(); const router = useRouter(); const client = useQueryClient(); const [confirm, setConfirm] = useState(false);

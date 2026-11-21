@@ -32,7 +32,7 @@ function AuthenticatedShell() {
   const list = route.split === 'tasks' ? (
     <TaskListScreen selectedId={id} />
   ) : route.split === 'guidelines' ? (
-    <View style={styles.body}><AppBar title={strings.nav.guidelines} /><GuidelineListScreen selectedId={id} /></View>
+    <GuidelineListScreen pane selectedId={id} />
   ) : undefined;
   const goBack = backTo ? () => {
     if (router.canGoBack()) router.back();
