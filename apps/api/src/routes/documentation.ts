@@ -7,8 +7,6 @@ import { z } from 'zod';
 import { emptyQuerySchema } from '@gabinete-plus/shared';
 
 const root = new URL('../../../../openapi/', import.meta.url);
-const source = readFileSync(new URL('gabinete-plus.yaml', root), 'utf8');
-const document = z.record(z.string(), z.json()).parse(parse(source));
 const html = `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Gabinete+ — Documentação da API</title><link rel="stylesheet" href="/docs/assets/swagger-ui.css"></head>
@@ -20,6 +18,8 @@ const initializer = `window.onload = () => {
 };`;
 
 export function createDocumentationRouter(): Router {
+  const source = readFileSync(new URL('gabinete-plus.yaml', root), 'utf8');
+  const document = z.record(z.string(), z.json()).parse(parse(source));
   const router = Router();
   router.use((_request, response, next) => {
     response.set('Cache-Control', 'no-store');

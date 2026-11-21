@@ -1,0 +1,4 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @gabinete-plus/shared build && pnpm --filter @gabinete-plus/api prisma:generate"
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "pnpm --filter @gabinete-plus/shared build && pnpm --filter @gabinete-plus/mobile export:web",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/:path*", "destination": "/" }]
+}

@@ -55,6 +55,9 @@ transições de status em `/tasks`.
 
 ## Documentação da API
 
+Para publicar a versão web e a API com deploys automáticos pelo GitHub, consulte
+[deploy na Vercel](docs/deploy-vercel.md).
+
 Com a API local em execução, abra [a documentação interativa](http://localhost:3333/docs/).
 O contrato também está disponível em `/docs/openapi.json` e `/docs/openapi.yaml`.
 Consulte [o guia OpenAPI](docs/api-openapi.md) para autenticação, exemplos, permissões

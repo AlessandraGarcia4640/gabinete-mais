@@ -11,7 +11,7 @@ export interface AuthApi {
   logout: (refreshToken: string) => Promise<void>;
 }
 export class HttpAuthApi implements AuthApi {
-  constructor(private readonly configuredUrl: string | undefined, private readonly fetcher: typeof fetch = fetch) {}
+  constructor(private readonly configuredUrl: string | undefined, private readonly fetcher: typeof fetch = globalThis.fetch.bind(globalThis)) {}
   get baseUrl(): string {
     const value = z.url().safeParse(this.configuredUrl);
     if (!value.success) throw new AuthFailure('configuration');
