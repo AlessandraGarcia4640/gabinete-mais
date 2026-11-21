@@ -14,4 +14,6 @@ Na raiz do monorepo: preparar .env, instalar dependências, configurar apps/mobi
 
 `pnpm check` verifica tipos, lint e testes; CI repete testes mobile e integrações. `pnpm --filter @gabinete-plus/mobile export:web` verifica o bundle web. Bundles não comprovam execução em aparelhos.
 
+A exportação web usa uma aplicação de página única. O host precisa devolver `index.html` nas URLs do app, inclusive nas rotas com identificadores dinâmicos, e servir os arquivos estáticos pelos caminhos originais.
+
 O app cobre RF00–RF06. O redesign inclui temas claro e escuro, navegação responsiva e leitura em painéis de lista e detalhe para Tarefas e Orientações.

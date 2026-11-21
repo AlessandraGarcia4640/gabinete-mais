@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
@@ -11,24 +11,47 @@ import { BrandMark } from '../../navigation/brand-mark';
 import { useTheme } from '../../providers/theme-provider';
 import { secureSessionStorage } from './storage';
 import { readConnectionUrl, saveConnectionUrl, clearConnectionUrl } from './connection-storage';
-interface Connection { url: string; reset: () => Promise<void> }
+interface Connection { url: string; reset: (endSession?: () => Promise<void>) => Promise<void> }
 const ConnectionContext = createContext<Connection | null>(null);
 export const useConnection = () => useContext(ConnectionContext);
 export function ConnectionGate({ children }: PropsWithChildren) {
   const { colors } = useTheme();
   const configured = connectionUrlSchema.safeParse(process.env.EXPO_PUBLIC_API_URL); const client = useQueryClient();
   const [url, setUrl] = useState<string | null>(configured.success ? configured.data : null); const [loading, setLoading] = useState(!configured.success); const [busy, setBusy] = useState(false); const [message, setMessage] = useState<string | null>(null);
+  const [changing, setChanging] = useState(false);
+  const resetPending = useRef(false);
   const form = useForm<{ url: string }>({ resolver: zodResolver(connectionFormSchema), defaultValues: { url: '' } });
   useEffect(() => { let active = true; if (!configured.success) void readConnectionUrl().then((saved) => { if (active) setUrl(saved); }).catch(() => { if (active) setMessage(strings.connection.storageError); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [configured.success]);
-  async function reset() { await secureSessionStorage.clear(); await clearConnectionUrl(); client.clear(); setUrl(null); form.reset({ url: '' }); }
+  async function reset(endSession?: () => Promise<void>) {
+    if (resetPending.current) return;
+    resetPending.current = true;
+    if (endSession) setChanging(true);
+    setMessage(null);
+    try {
+      await endSession?.();
+      await secureSessionStorage.clear();
+      await clearConnectionUrl();
+    } catch (error) {
+      if (!endSession) throw error;
+      setMessage(strings.connection.storageError);
+    } finally {
+      resetPending.current = false;
+      setChanging(false);
+    }
+    client.clear();
+    setUrl(null);
+    form.reset({ url: '' });
+  }
   async function save(input: { url: string }) { setBusy(true); setMessage(null); try { const valid = connectionUrlSchema.parse(input.url); await secureSessionStorage.clear(); await saveConnectionUrl(valid); client.clear(); setUrl(valid); } catch { setMessage(strings.connection.storageError); } finally { setBusy(false); } }
-  if (loading) {
+  if (loading || changing) {
     return (
       <AuthScreen contentStyle={styles.page}>
         <BrandMark large />
         <View accessibilityState={{ busy: true }} style={styles.loading}>
           <ActivityIndicator color={colors.brand} />
-          <AppText variant="body" color="inkMuted" accessibilityLiveRegion="polite">{strings.connection.loading}</AppText>
+          <AppText variant="body" color="inkMuted" accessibilityLiveRegion="polite">
+            {changing ? strings.connection.changing : strings.connection.loading}
+          </AppText>
         </View>
       </AuthScreen>
     );

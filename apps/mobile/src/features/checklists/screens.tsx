@@ -42,9 +42,11 @@ export function ChecklistFormScreen({ mode }: { mode: 'create' | 'edit' }) {
       actions={<Button label={copy.returnToModels} variant="secondary" onPress={returnToModels} />} />,
   );
   if (mode === 'edit' ? !id : !routineId) return stateScreen(<EmptyState message={copy.notFound} />);
-  if (query.isError || routine.isError) return stateScreen(
-    <ErrorState message={query.isError ? checklistError(query.error) : routine.isError ? routineError(routine.error) : undefined}
-      retry={() => { if (query.isError) void query.refetch(); if (routine.isError) void routine.refetch(); }} />,
+  if (query.isError && !query.data) return stateScreen(
+    <ErrorState message={checklistError(query.error)} retry={() => void query.refetch()} />,
+  );
+  if (routine.isError && !routine.data) return stateScreen(
+    <ErrorState message={routineError(routine.error)} retry={() => void routine.refetch()} />,
   );
   if ((mode === 'edit' && query.isPending) || routine.isPending) return stateScreen(<LoadingState />);
   if (query.data?.isArchived || routine.data?.isArchived) return stateScreen(<EmptyState message={copy.archivedError} />);

@@ -27,7 +27,8 @@ export function TaskFormScreen({ mode }: { mode: 'create' | 'edit' }) {
     const header = <AppBar title={strings.tasks.edit} onBack={cancel} />;
     if (!id) return <Screen>{header}<EmptyState message={strings.tasks.notFound} /></Screen>;
     if (query.isPending) return <Screen>{header}<LoadingState /></Screen>;
-    if (query.isError) return <Screen>{header}<ErrorState message={taskError(query.error)} retry={() => void query.refetch()} /></Screen>;
+    if (query.isError && !query.data) return <Screen>{header}<ErrorState message={taskError(query.error)} retry={() => void query.refetch()} /></Screen>;
+    if (!query.data) return <Screen>{header}<EmptyState message={strings.tasks.notFound} /></Screen>;
     if (!taskActions(query.data, user).edit) return (
       <Screen>{header}
         <EmptyState message={query.data.status === 'CONCLUIDA' || query.data.status === 'CANCELADA' ? strings.tasks.closed : strings.tasks.forbidden} />

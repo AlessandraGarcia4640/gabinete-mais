@@ -21,8 +21,7 @@ export function SessionScreen() {
     retry: false,
     mutationFn: async () => {
       if (!connection) return;
-      await manager.logout();
-      await connection.reset();
+      await connection.reset(() => manager.logout());
     },
   });
   if (!user) return null;

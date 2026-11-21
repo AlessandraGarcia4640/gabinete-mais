@@ -29,7 +29,7 @@ export function RoutineFormScreen({ mode }: { mode: 'create' | 'edit' }) {
       actions={<Button label={copy.backToList} variant="secondary" onPress={returnToList} />} />
   ) : mode === 'edit' && !id ? <EmptyState message={copy.notFound} />
     : mode === 'edit' && query.isPending ? <LoadingState />
-      : mode === 'edit' && query.isError ? <ErrorState message={routineError(query.error)} retry={() => void query.refetch()} />
+      : mode === 'edit' && query.isError && !query.data ? <ErrorState message={routineError(query.error)} retry={() => void query.refetch()} />
         : mode === 'edit' && query.data?.isArchived ? <EmptyState message={copy.archivedError} /> : null;
   if (failure) {
     return (

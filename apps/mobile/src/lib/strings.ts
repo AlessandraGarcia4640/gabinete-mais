@@ -11,7 +11,7 @@ export const strings = {
     help: 'Informe o endereço fornecido pela pessoa responsável pelo gabinete. Depois, entre com sua conta.',
     address: 'Endereço de acesso', formatHelp: 'Começa por https:// ou http:// e não inclui senha ou parâmetros.',
     connect: 'Continuar para o login', change: 'Alterar endereço de acesso',
-    loading: 'Carregando endereço de acesso…', saving: 'Salvando endereço…',
+    loading: 'Carregando endereço de acesso…', saving: 'Salvando endereço…', changing: 'Preparando a troca de endereço…',
     invalid: 'Informe um endereço válido, começando por https:// ou http://, sem senha ou parâmetros.',
     storageError: 'Não foi possível salvar o acesso neste dispositivo. Tente novamente.',
   },

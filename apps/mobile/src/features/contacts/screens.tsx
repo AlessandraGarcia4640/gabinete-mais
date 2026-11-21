@@ -23,7 +23,7 @@ export function ContactFormScreen({ mode }: { mode: 'create' | 'edit' }) {
   if (user?.role !== 'CHEFE') state = <EmptyState icon="lock" message={copy.forbidden} />;
   else if (mode === 'edit' && !id) state = <EmptyState message={copy.notFound} />;
   else if (mode === 'edit' && query.isPending) state = <LoadingState />;
-  else if (mode === 'edit' && query.isError) state = <ErrorState message={contactError(query.error)} retry={() => void query.refetch()} />;
+  else if (mode === 'edit' && query.isError && !query.data) state = <ErrorState message={contactError(query.error)} retry={() => void query.refetch()} />;
   else if (mode === 'edit' && query.data?.isArchived) state = <EmptyState message={copy.archivedError} />;
   if (state) return <Screen><AppBar title={mode === 'edit' ? copy.edit : copy.create} onBack={cancel} />{state}</Screen>;
   return <ContactForm key={id ?? 'new'} contact={mode === 'edit' ? query.data : undefined} guardNavigation onCancel={cancel}

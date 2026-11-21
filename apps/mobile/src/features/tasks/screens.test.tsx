@@ -13,6 +13,7 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
 }));
 jest.mock('@shopify/flash-list', () => { const { FlatList } = jest.requireActual<typeof import('react-native')>('react-native'); return { FlashList: FlatList }; });
+jest.mock('../../navigation/prevent-form-removal', () => ({ PreventFormRemoval: () => null }));
 jest.mock('react-native-safe-area-context', () => { const mock = jest.requireActual<typeof import('react-native-safe-area-context/jest/mock')>('react-native-safe-area-context/jest/mock'); return mock.default; });
 let fixture: Awaited<ReturnType<typeof dashboardFixture>>; let fetcher: jest.SpyInstance<ReturnType<typeof fetch>, Parameters<typeof fetch>>; let previous: string | undefined;
 beforeEach(async () => { jest.useFakeTimers(); previous = process.env.EXPO_PUBLIC_API_URL; process.env.EXPO_PUBLIC_API_URL = 'https://api.example.invalid'; fixture = await dashboardFixture(); fetcher = jest.spyOn(globalThis, 'fetch'); mockParams = {}; mockPush.mockClear(); mockReplace.mockClear(); });
@@ -20,6 +21,18 @@ afterEach(() => { cleanup(); fixture.client.clear(); act(() => jest.runOnlyPendi
 function chief() { const user = fixture.manager.store.getState().user; if (!user) throw new Error('Usuário ausente.'); fixture.manager.store.setState({ user: { ...user, role: 'CHEFE' } }); }
 function response(value: object) { return Promise.resolve(new Response(JSON.stringify(value))); }
 function person(id = 'other', name = 'Outra Pessoa') { return userDetailSchema.parse({ id, name, email: `${id}@example.invalid`, role: 'APOIO', isActive: true, position: 'APOIO', createdAt: '2026-10-12T12:00:00Z', updatedAt: '2026-10-12T12:00:00Z' }); }
+it('mantém o rascunho da edição quando salvar e a atualização em segundo plano falham', async () => {
+  mockParams = { id: 'task-1' };
+  fetcher.mockImplementation((url) => String(url).endsWith('/tasks/task-1')
+    ? Promise.reject(new Error('Falha de rede fictícia.')) : response({ items: [], nextCursor: null }));
+  fetcher.mockImplementationOnce(() => response(taskFixture()));
+  fixture.show(<TaskFormScreen mode="edit" />);
+  fireEvent.changeText(await screen.findByLabelText(strings.tasks.name), 'Rascunho de tarefa fictícia');
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  await waitFor(() => expect(fixture.client.getQueryState(['task', 'task-1', 'actor'])?.status).toBe('error'));
+  expect(screen.getByLabelText(strings.tasks.name)).toHaveProp('value', 'Rascunho de tarefa fictícia');
+  expect(screen.getByRole('alert')).toHaveTextContent(strings.auth.network);
+});
 it('catálogo pagina, filtra status/prioridade/atraso/equipe e abre detalhe', async () => {
   fetcher.mockImplementation((url) => response({ items: [taskFixture({ id: String(url).includes('cursor=') ? 'second' : 'task-1', title: String(url).includes('cursor=') ? 'Segunda tarefa' : 'Tarefa fictícia' })], nextCursor: String(url).includes('cursor=') ? null : 'next' }));
   fixture.show(<TaskListScreen />); await screen.findByRole('button', { name: 'Tarefa fictícia' }); expect(String(fetcher.mock.calls[0]?.[0])).toContain('assigneeId=actor');

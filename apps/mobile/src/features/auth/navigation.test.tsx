@@ -1,6 +1,6 @@
 import { TransitionGuideScreen, TransitionCuratorScreen, TransitionCopiesScreen, TransitionCopyScreen } from '../transition/screens';
 import { GuidelineDetailScreen, GuidelineFormScreen, GuidelineHistoryScreen, GuidelineVersionScreen } from '../guidelines/screens';
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as SecureStore from 'expo-secure-store';
 import { loginResponseSchema, createContactSchema, updateContactSchema } from '@gabinete-plus/shared';
 import { taskFixture } from '../dashboard/fixtures.test-helper';
@@ -97,10 +97,13 @@ it('rota privada abre login, sucesso navega para o gabinete e sair impede voltar
 it('perfil pode cancelar a troca de endereço e abre a configuração ao confirmar', async () => {
   const previous = process.env.EXPO_PUBLIC_API_URL;
   process.env.EXPO_PUBLIC_API_URL = 'https://api.example.invalid';
+  let finishLogout: () => void = () => { throw new Error('Requisição de saída ainda não iniciada.'); };
   const fetcher = jest.spyOn(globalThis, 'fetch').mockImplementation((url) => {
     const path = new URL(String(url)).pathname;
     if (path === '/auth/login') return Promise.resolve(new Response(JSON.stringify(authResponse('CHEFE'))));
-    if (path === '/auth/logout') return Promise.resolve(new Response(null, { status: 204 }));
+    if (path === '/auth/logout') return new Promise((resolve) => {
+      finishLogout = () => resolve(new Response(null, { status: 204 }));
+    });
     return Promise.resolve(new Response(JSON.stringify({ items: [], nextCursor: null })));
   });
   try {
@@ -115,8 +118,11 @@ it('perfil pode cancelar a troca de endereço e abre a configuração ao confirm
     expect(fetcher.mock.calls.some(([url]) => String(url).endsWith('/auth/logout'))).toBe(false);
     fireEvent.press(screen.getByRole('button', { name: strings.connection.address }));
     fireEvent.press(screen.getByRole('button', { name: strings.connection.change }));
+    await screen.findByText(strings.connection.changing);
+    await waitFor(() => expect(fetcher.mock.calls.some(([url]) => String(url).endsWith('/auth/logout'))).toBe(true));
+    expect(screen.queryByRole('button', { name: strings.auth.submit })).toBeNull();
+    await act(async () => { finishLogout(); });
     expect(await screen.findByRole('header', { name: strings.connection.title })).toBeTruthy();
-    expect(fetcher.mock.calls.some(([url]) => String(url).endsWith('/auth/logout'))).toBe(true);
   } finally {
     fetcher.mockRestore();
     if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL;
