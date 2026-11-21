@@ -8,9 +8,9 @@ import {
   ListGroup, ListRow, LoadingState, MarkdownContent, Screen, Section, Tag,
 } from '../../components';
 import { strings } from '../../lib/strings';
-import { dimensions, radius, size, spacing } from '../../lib/theme';
+import { NumberedText } from '../../components/numbered-text';
+import { size, spacing } from '../../lib/theme';
 import { useSession } from '../../providers/session-provider';
-import { useTheme } from '../../providers/theme-provider';
 import { checklistError, useTemplates } from '../checklists/hooks';
 import { displayDate } from '../dashboard/model';
 import { routineError, useRoutine, useRoutinesApi } from './hooks';
@@ -18,17 +18,11 @@ import { routineError, useRoutine, useRoutinesApi } from './hooks';
 const copy = strings.routines;
 
 function Steps({ items }: { items: Routine['steps'] }) {
-  const { colors } = useTheme();
   return (
     <Section title={copy.steps}>
       <Card>
         {items.length ? items.map((text, index) => (
-          <View key={index} style={styles.step}>
-            <View aria-hidden style={[styles.stepNumber, { backgroundColor: colors.brandSoft }]}>
-              <AppText variant="label" color="brandText" emphasis>{index + 1}</AppText>
-            </View>
-            <AppText variant="body" style={styles.stepText} accessibilityLabel={copy.stepDescription(index, text)}>{text}</AppText>
-          </View>
+          <NumberedText key={index} position={index + 1} text={text} accessibilityLabel={copy.stepDescription(index, text)} />
         )) : <AppText variant="body" color="inkMuted">{copy.noSteps}</AppText>}
       </Card>
     </Section>
@@ -155,9 +149,6 @@ const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: size.contentMax, alignSelf: 'center', gap: spacing.space6, padding: spacing.space4 },
   intro: { gap: spacing.space3 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.space2 },
-  step: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.space3 },
-  stepNumber: { width: dimensions.smallAvatar, height: dimensions.smallAvatar, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
-  stepText: { flex: 1, minWidth: 0 },
   links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.space2 },
   loading: { padding: 0 },
 });

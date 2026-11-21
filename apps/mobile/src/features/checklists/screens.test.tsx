@@ -6,7 +6,7 @@ import { ChecklistForm } from './form';
 import { optimisticMark } from './model';
 import { strings } from '../../lib/strings';
 const mockPush = jest.fn(); const mockReplace = jest.fn(); let mockParams: { id?: string; routineId?: string; templateId?: string } = {};
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace }), useLocalSearchParams: () => mockParams }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace, canGoBack: () => false }), useLocalSearchParams: () => mockParams }));
 jest.mock('@shopify/flash-list', () => { const { FlatList } = jest.requireActual<typeof import('react-native')>('react-native'); return { FlashList: FlatList }; });
 jest.mock('react-native-safe-area-context', () => { const mock = jest.requireActual<typeof import('react-native-safe-area-context/jest/mock')>('react-native-safe-area-context/jest/mock'); return mock.default; });
 let fixture: Awaited<ReturnType<typeof dashboardFixture>>; let fetcher: jest.SpyInstance<ReturnType<typeof fetch>, Parameters<typeof fetch>>; let previous: string | undefined;
@@ -60,9 +60,30 @@ it('resposta tardia após sair não restaura o cache da execução', async () =>
 });
 it('início é explícito, valida data e abre a execução retornada', async () => {
   mockParams = { id: 'template-1' }; fetcher.mockImplementation((url, init) => response(init?.method === 'POST' ? runFixture() : String(url).includes('/routines/') ? routineFixture() : templateFixture()));
-  fixture.show(<ChecklistDetailScreen />); await screen.findByRole('button', { name: strings.checklists.start }); expect(fetcher.mock.calls.some((call) => call[1]?.method === 'POST')).toBe(false);
+  fixture.show(<ChecklistDetailScreen />); await screen.findByRole('button', { name: strings.checklists.startToday }); expect(fetcher.mock.calls.some((call) => call[1]?.method === 'POST')).toBe(false);
+  expect(screen.getByLabelText(strings.checklists.itemDescription(0, 'Conferir caixa'))).toBeTruthy();
+  expect(screen.queryByRole('button', { name: strings.checklists.edit })).toBeNull();
   fireEvent.changeText(screen.getByLabelText(strings.checklists.date), '31/02/2026'); fireEvent.press(screen.getByRole('button', { name: strings.checklists.start })); await screen.findByText(strings.routines.validation.specificDate);
   fireEvent.changeText(screen.getByLabelText(strings.checklists.date), '12/10/2026'); fireEvent.press(screen.getByRole('button', { name: strings.checklists.start })); await waitFor(() => expect(mockPush).toHaveBeenCalledWith({ pathname: '/execucao/[id]', params: { id: 'run-1' } }));
+});
+it('mostra conflito do período e mantém a referência após a falha', async () => {
+  chief();
+  mockParams = { id: 'template-1' };
+  fetcher.mockImplementation((url, init) => {
+    if (init?.method === 'POST') return Promise.resolve(new Response(JSON.stringify({
+      error: { code: 'CHECKLIST_RUN_EXISTS', message: 'Já existe uma execução fictícia.' },
+    }), { status: 409 }));
+    return response(String(url).includes('/routines/') ? routineFixture() : templateFixture());
+  });
+  fixture.show(<ChecklistDetailScreen />);
+  await screen.findByRole('button', { name: strings.checklists.startToday });
+  fireEvent.changeText(screen.getByLabelText(strings.checklists.date), '12/10/2026');
+  fireEvent.press(screen.getByRole('button', { name: strings.checklists.start }));
+  await screen.findByText(strings.checklists.exists);
+  expect(screen.getByLabelText(strings.checklists.date).props.value).toBe('12/10/2026');
+  expect(mockPush).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: strings.checklists.history }));
+  expect(mockPush).toHaveBeenCalledWith({ pathname: '/execucoes', params: { templateId: 'template-1' } });
 });
 it('marcação otimista aparece antes da resposta e reverte em recusa de tarefa concluída', async () => {
   mockParams = { id: 'run-1' }; let fail: ((value: Response) => void) | undefined;
@@ -86,5 +107,7 @@ it('arquiva somente com confirmação e mantém acesso ao histórico', async () 
     return response(String(url).includes('/routines/') ? routineFixture() : templateFixture({ isArchived: archived }));
   }); fixture.show(<ChecklistDetailScreen />); await screen.findByRole('button', { name: strings.checklists.archive }); fireEvent.press(screen.getByRole('button', { name: strings.checklists.archive }));
   expect(fetcher.mock.calls.some((call) => call[1]?.method === 'DELETE')).toBe(false); fireEvent.press(screen.getByRole('button', { name: strings.checklists.confirmArchive })); await screen.findByText(strings.checklists.archivedLabel);
-  expect(screen.queryByRole('button', { name: strings.checklists.start })).toBeNull(); expect(screen.getByRole('button', { name: strings.checklists.history })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: strings.checklists.startToday })).toBeNull();
+  expect(screen.queryByLabelText(strings.checklists.date)).toBeNull();
+  expect(screen.getByRole('button', { name: strings.checklists.history })).toBeTruthy();
 });

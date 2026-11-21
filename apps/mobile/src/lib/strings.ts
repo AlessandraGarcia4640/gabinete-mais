@@ -72,6 +72,8 @@ export const strings = {
     modelSummary: (version: string, count: string) => `${version} · ${count}`,
     progressFraction: (done: number, total: number) => `${String(done)}/${String(total)}`,
     start: 'Iniciar ou abrir execução', date: 'Data de referência', startHelp: 'A execução é criada para o período desta data e fica sob sua responsabilidade. Uma execução existente será reaberta.',
+    startToday: 'Abrir execução de hoje', snapshotHelp: 'Alterar o modelo não muda execuções já iniciadas.',
+    itemDescription: (index: number, text: string) => `Item ${String(index + 1)}. ${text}`,
     owner: 'Esta execução está sob sua responsabilidade.', chiefCanMark: 'A chefia pode marcar os itens desta execução.', readOnly: 'Somente a pessoa responsável e a chefia podem marcar os itens.', personUnavailable: 'Integrante da equipe',
     snapshot: 'Itens e orientações registrados no início desta execução.', marked: (actor: string, date: string) => `Marcado por ${actor} em ${date}`,
     archive: 'Arquivar checklist', confirmArchive: 'Confirmar arquivamento do checklist', archiveHelp: 'O modelo deixará de permitir novas execuções. O histórico será preservado.', archivedLabel: 'Este modelo está arquivado.',

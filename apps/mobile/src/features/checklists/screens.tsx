@@ -6,23 +6,20 @@ import { Checkbox } from '../../components/checkbox';
 import { Screen } from '../../components/screen';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import { userIdParamsSchema } from '@gabinete-plus/shared';
-import { useSession, useSessionManager } from '../../providers/session-provider';
+import { useSession } from '../../providers/session-provider';
 import { strings } from '../../lib/strings';
 import { Button } from '../../components/button';
-import { TextField } from '../../components/text-field';
 import { Choice } from '../../components/choice';
 import { useRoutine } from '../routines/hooks';
 import { LoadingState, EmptyState, ErrorState } from '../../components/feedback';
-import { gabineteDate, displayDate } from '../dashboard/model';
+import { displayDate } from '../dashboard/model';
 import { checklistError, useChecklistsApi, useMarkItem, useRun, useRuns, useTemplate } from './hooks';
-import { dateInput, startFormSchema, startPayload } from './model';
 import { ChecklistForm } from './form';
 import { useStyles } from './styles';
 export { ChecklistListScreen } from './list-screen';
+export { ChecklistDetailScreen } from './detail-screen';
 function identifier(value: string | string[] | undefined): string | undefined { const valid = userIdParamsSchema.safeParse({ id: value }); return valid.success ? valid.data.id : undefined; }
 function Page<T extends { id: string }>({ data, query, header, empty, render }: { data: T[]; header: ReactElement; empty: string; render: (item: T) => ReactElement;
   query: { isPending: boolean; isError: boolean; isRefetching: boolean; isFetchingNextPage: boolean; hasNextPage: boolean; isFetchNextPageError: boolean; refetch: () => Promise<object>; fetchNextPage: () => Promise<object> } }) {
@@ -40,37 +37,6 @@ export function ChecklistHistoryScreen() {
     header={<View style={styles.section}><View style={styles.choices}><Choice label={strings.checklists.mine} selected={mine} onPress={() => setMine(true)} /><Choice label={strings.checklists.allRuns} selected={!mine} onPress={() => setMine(false)} /></View></View>}
     render={(item) => <Card label={`${item.titleSnapshot} ${displayDate(item.periodStart)}`} onPress={() => router.push({ pathname: '/execucao/[id]', params: { id: item.id } })}>
       <AppText variant="bodyStrong" style={styles.label}>{item.titleSnapshot}</AppText><AppText variant="body">{item.routineTitleSnapshot}</AppText><AppText variant="body">{displayDate(item.periodStart)} · {strings.checklists.status[item.status]}</AppText><AppText variant="body">{strings.checklists.progress(item.completedItems, item.totalItems)}</AppText></Card>} />;
-}
-export function ChecklistDetailScreen() {
-  const styles = useStyles();
-  const params = useLocalSearchParams(); const id = identifier(params.id); const query = useTemplate(id); const routine = useRoutine(query.data?.routineId); const api = useChecklistsApi();
-  const { user } = useSession(); const manager = useSessionManager(); const router = useRouter(); const client = useQueryClient(); const [confirm, setConfirm] = useState(false);
-  const form = useForm({ resolver: zodResolver(startFormSchema), defaultValues: { date: dateInput(gabineteDate()) } });
-  const start = useMutation({ retry: false, mutationFn: (value: { date: string }) => api.start(id ?? '', startPayload(value.date)), onSuccess: (run) => {
-    if (manager.store.getState().user?.id !== user?.id || manager.store.getState().status !== 'authenticated') return;
-    client.setQueryData(['checklist-run', run.id, user?.id], run); void client.invalidateQueries({ queryKey: ['checklist-runs'] }); router.push({ pathname: '/execucao/[id]', params: { id: run.id } });
-  } });
-  const archive = useMutation({ retry: false, mutationFn: () => api.archive(id ?? ''), onSuccess: async () => {
-    setConfirm(false); await Promise.all([client.invalidateQueries({ queryKey: ['checklist-template', id] }), client.invalidateQueries({ queryKey: ['checklist-templates'] })]);
-  } });
-  if (!id) return <EmptyState message={strings.checklists.notFound} />;
-  if (query.isPending) return <LoadingState />;
-  if (query.isError) return <View><AppText variant="caption" style={styles.error}>{checklistError(query.error)}</AppText><ErrorState retry={() => void query.refetch()} /></View>;
-  const template = query.data; const blocked = template.isArchived || routine.data?.isArchived; const busy = start.isPending || archive.isPending;
-  return <Screen><FlashList data={template.items.map((text, index) => ({ text, index }))} keyExtractor={(item) => String(item.index)} contentContainerStyle={styles.content}
-    ListHeaderComponent={<View style={styles.section}><AppText variant="titleLg" accessibilityRole="header" style={styles.title}>{template.title}</AppText><AppText variant="body">{strings.checklists.version(template.version)}</AppText>
-      <Button label={routine.data?.title ?? strings.routines.details} variant="secondary" onPress={() => router.push({ pathname: '/rotina/[id]', params: { id: template.routineId } })} />
-      {blocked && <AppText variant="body">{strings.checklists.archivedLabel}</AppText>}</View>}
-    renderItem={({ item }) => <Card><AppText variant="bodyStrong" style={styles.label}>{strings.checklists.item(item.index)}</AppText><AppText variant="body" style={styles.text}>{item.text}</AppText></Card>}
-    ListFooterComponent={<View style={styles.section}><Button label={strings.checklists.history} variant="secondary" onPress={() => router.push({ pathname: '/execucoes', params: { templateId: template.id } })} />
-      {routine.isPending && <LoadingState />}{routine.isError && <ErrorState retry={() => void routine.refetch()} />}
-      {!blocked && !!routine.data && <><AppText variant="body">{strings.checklists.startHelp}</AppText><Controller control={form.control} name="date" render={({ field, fieldState }) => <TextField label={strings.checklists.date} placeholder={strings.routines.datePlaceholder} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} editable={!busy} errorText={fieldState.error ? strings.routines.validation.specificDate : undefined} />} />
-        <Button label={strings.checklists.start} loading={start.isPending} disabled={busy} onPress={() => void form.handleSubmit((value) => start.mutate(value))()} />
-        {user?.role === 'CHEFE' && <Button label={strings.checklists.edit} disabled={busy} variant="secondary" onPress={() => router.push({ pathname: '/checklist/[id]/editar', params: { id: template.id } })} />}</>}
-      {start.isError && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{checklistError(start.error)}</AppText>}
-      {archive.isError && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{checklistError(archive.error)}</AppText>}
-      {user?.role === 'CHEFE' && !template.isArchived && (!confirm ? <Button label={strings.checklists.archive} disabled={busy} variant="secondary" onPress={() => setConfirm(true)} /> : <><AppText variant="body">{strings.checklists.archiveHelp}</AppText><Button label={strings.checklists.confirmArchive} loading={archive.isPending} disabled={busy} onPress={() => archive.mutate()} /><Button label={strings.routines.cancel} variant="secondary" disabled={busy} onPress={() => setConfirm(false)} /></>)}
-    </View>} /></Screen>;
 }
 export function ChecklistRunScreen() {
   const styles = useStyles();
