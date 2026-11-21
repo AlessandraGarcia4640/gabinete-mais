@@ -18,9 +18,11 @@ type ContrastPair = [foreground: keyof ColorTokens, background: keyof ColorToken
 
 const textPairs: ContrastPair[] = [
   ['ink', 'bg'], ['ink', 'surface'], ['ink', 'surfaceSunken'], ['ink', 'surfaceRaised'], ['ink', 'brandSoft'],
+  ['ink', 'infoSoft'], ['ink', 'successSoft'], ['ink', 'accentSoft'], ['ink', 'dangerSoft'],
   ['inkMuted', 'bg'], ['inkMuted', 'surface'], ['inkMuted', 'surfaceSunken'],
+  ['inkMuted', 'surfaceRaised'], ['inkMuted', 'brandSoft'],
   ['inkSubtle', 'bg'], ['inkSubtle', 'surface'],
-  ['brandText', 'bg'], ['brandText', 'surface'], ['brandText', 'brandSoft'],
+  ['brandText', 'bg'], ['brandText', 'surface'], ['brandText', 'surfaceSunken'], ['brandText', 'brandSoft'],
   ['onBrand', 'brand'], ['onBrand', 'brandHover'], ['onAccent', 'accent'],
   ['accentText', 'bg'], ['accentText', 'surface'], ['accentText', 'accentSoft'],
   ['success', 'surface'], ['success', 'successSoft'],
@@ -33,8 +35,8 @@ const textPairs: ContrastPair[] = [
 ];
 
 const controlPairs: ContrastPair[] = [
-  ['borderStrong', 'bg'], ['borderStrong', 'surface'],
-  ['focus', 'bg'], ['focus', 'surface'],
+  ['borderStrong', 'bg'], ['borderStrong', 'surface'], ['borderStrong', 'surfaceRaised'],
+  ['focus', 'bg'], ['focus', 'surface'], ['focus', 'surfaceRaised'],
 ];
 
 it('calcula contraste pelas luminâncias relativas', () => {

@@ -20,7 +20,7 @@ export function ContactFormScreen({ mode }: { mode: 'create' | 'edit' }) {
     else router.replace('/contatos');
   }
   let state = null;
-  if (user?.role !== 'CHEFE') state = <EmptyState message={copy.forbidden} />;
+  if (user?.role !== 'CHEFE') state = <EmptyState icon="lock" message={copy.forbidden} />;
   else if (mode === 'edit' && !id) state = <EmptyState message={copy.notFound} />;
   else if (mode === 'edit' && query.isPending) state = <LoadingState />;
   else if (mode === 'edit' && query.isError) state = <ErrorState message={contactError(query.error)} retry={() => void query.refetch()} />;

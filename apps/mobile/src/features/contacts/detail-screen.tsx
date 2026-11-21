@@ -143,7 +143,7 @@ function ContactDetail({ id }: { id?: string }) {
           </Section>
         </ScrollView>
       )}
-      <Dialog title={copy.archive} visible={confirm} message={copy.archiveHelp} error={archive.isError ? contactError(archive.error) : undefined}
+      <Dialog title={copy.archiveTitle} visible={confirm} message={copy.archiveHelp} error={archive.isError ? contactError(archive.error) : undefined}
         confirmLabel={copy.confirmArchive} dismissLabel={strings.routines.cancel} busy={archive.isPending} returnFocusRef={archiveRef}
         onDismiss={() => setConfirm(false)} onConfirm={() => { if (canManage) archive.mutate(); }} />
     </Screen>

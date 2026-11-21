@@ -35,7 +35,7 @@ export function GuidelineFormScreen({ mode }: { mode: 'create' | 'edit' }) {
   const query = useGuideline(user?.role === 'CHEFE' ? id : undefined);
   const router = useRouter();
   let state = null;
-  if (user?.role !== 'CHEFE') state = <EmptyState message={copy.forbidden} />;
+  if (user?.role !== 'CHEFE') state = <EmptyState icon="lock" message={copy.forbidden} />;
   else if (mode === 'edit' && !id) state = <EmptyState message={copy.notFound} />;
   else if (mode === 'edit' && query.isPending) state = <LoadingState />;
   else if (mode === 'edit' && query.isError && !query.data) {

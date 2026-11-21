@@ -1,13 +1,29 @@
-# Acessibilidade básica — etapa 41
+# Acessibilidade do app
 
-Rótulos e papéis de botão, rádio e checkbox anunciam ação/seleção/bloqueio. Sim/não nos formulários de rotina/contato recebem contexto da pergunta. Erros dos campos são alertas e compõem a dica acessível. Navegação por teclado tem borda de foco nos controles compartilhados. O modal de seleção isola o conteúdo e oculta o formulário/detalhe subjacente para leitores de tela, sem bloquear seu retorno ao fechar.
+O Gabinete+ acompanha o tema do sistema. Os dois temas usam a tipografia IBM Plex e os mesmos componentes de navegação, entrada e feedback. Controles expõem nomes, papéis e estados acessíveis. Chips usam uma marca de seleção, e selos de status combinam texto e ícone.
 
-Alvos interativos usam mínimo de 48 unidades lógicas, com botão/campo de 52. Textos dos controles permitem escalonamento, sem altura fixa nem limite de ampliação. Conteúdo pode quebrar linhas; formulários e detalhes são roláveis. Mostrar/ocultar senha usa o mesmo botão acessível e fica indisponível durante login.
+## Interação
 
-Contraste calculado segundo luminância sRGB: texto principal/superfície 13,11:1; texto secundário/superfície 5,78:1; primário/branco 6,11:1; branco/primário pressionado 8,44:1; borda/superfície 3,94:1. Testes exigem 4,5:1 para texto e 3:1 para bordas em todas as superfícies usadas. Estados pressionados mudam fundo, preservando contraste; somente controles inativos usam redução de opacidade.
+- Os alvos interativos têm pelo menos 48 unidades lógicas, com 52 nos campos e botões padrão. Controles compactos ampliam a área de toque. Textos de controle permitem escalonamento de fonte e os formulários e detalhes permitem rolagem.
+- O foco por teclado é visível. Diálogos e folhas focam o título ao abrir e aceitam uma referência ao gatilho para a restauração de foco no dispositivo. Campos associam a mensagem de erro ao rótulo acessível. Estados de carregamento, falha e confirmação usam regiões de anúncio.
+- A navegação principal usa barra inferior no celular, barra lateral compacta no tablet e barra lateral com rótulos no espaço expandido. Tarefas e Orientações exibem lista e detalhe lado a lado a partir de 840 px.
 
-Referências primárias: [WCAG 2.2, contraste textual](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html), [contraste não textual](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html), [React Native, acessibilidade](https://reactnative.dev/docs/accessibility). Os limiares são verificação automatizada de cores; isto não é certificação WCAG completa.
+## Contraste
+
+Os testes calculam a razão de contraste por luminância sRGB nos dois temas. O mínimo é 4,5:1 para texto e 3:1 para bordas de controle e indicação de foco. A tabela traz pares presentes nos fluxos do app.
+
+| Par de tokens | Claro | Escuro |
+| --- | ---: | ---: |
+| Texto principal sobre superfície | 15,80:1 | 14,46:1 |
+| Texto secundário sobre superfície | 6,91:1 | 7,86:1 |
+| Texto do botão principal sobre sua cor de fundo | 9,16:1 | 7,74:1 |
+| Borda de controle sobre superfície | 3,74:1 | 4,07:1 |
+| Indicação de foco sobre fundo da tela | 8,34:1 | 10,77:1 |
+
+Referências para os limiares de contraste. [WCAG 2.2 para texto](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) · [WCAG 2.2 para controles](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
 
 ## Evidências e pendências
 
-Testes de controles, contraste e regressões dos fluxos; bundles web/Android/iOS. Ainda é necessário validar TalkBack/VoiceOver em aparelhos, foco/restauração do modal, teclado externo, ampliação a 200% e ausência de recortes em telas pequenas. Não há evidência de execução dessas verificações nativas neste ambiente; os testes de árvore React e props não comprovam geometria real ou leitura por tecnologias assistivas.
+Os testes automatizados verificam foco, papéis, estados, alvos e contraste. A inspeção visual no Chrome cobriu 390, 834 e 1360 px nos temas claro e escuro, incluindo navegação por teclado e fechamento de sobreposições nos componentes compartilhados.
+
+A execução com TalkBack e VoiceOver, a restauração de foco com tecnologia assistiva e o teste físico de teclado externo e ampliação a 200% seguem pendentes. Este ambiente não dispunha de dispositivos nem emuladores Android e iOS para esses cenários.

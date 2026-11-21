@@ -37,7 +37,7 @@ export function TransitionCuratorScreen() {
   return (
     <Screen>
       <AppBar title={copy.curate} onBack={() => router.replace('/transicao')} />
-      {user?.role !== 'CHEFE' ? <EmptyState message={copy.forbidden} /> : query.isPending ? <LoadingState />
+      {user?.role !== 'CHEFE' ? <EmptyState icon="lock" message={copy.forbidden} /> : query.isPending ? <LoadingState />
         : query.isError && <ErrorState message={errorMessage(query.error)} retry={() => void query.refetch()} />}
     </Screen>
   );
@@ -173,7 +173,7 @@ export function TransitionForm({ settings, guardNavigation = false }: { settings
           <Button ref={cancelRef} label={strings.routines.cancel} variant="ghost" disabled={busy} onPress={() => attemptExit(cancel)} />
         </ScrollView>
       </View>
-      <Dialog title={copy.generate} visible={!!pending} message={copy.copyHelp} intent="primary" error={generationError ?? undefined}
+      <Dialog title={copy.generateTitle} visible={!!pending} message={copy.copyHelp} intent="primary" error={generationError ?? undefined}
         busy={generate.isPending} confirmLabel={copy.confirmGeneration} dismissLabel={strings.routines.cancel} returnFocusRef={generateRef}
         onDismiss={() => setPending(null)} onConfirm={() => { if (pending) void snapshot(pending); }} />
       <DiscardDialog visible={!!discard} returnFocusRef={cancelRef} onDismiss={() => setDiscard(null)} onDiscard={() => {

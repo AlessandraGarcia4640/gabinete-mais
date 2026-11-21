@@ -89,7 +89,7 @@ function GuidelineDetail({ id }: { id?: string }) {
       <Sheet title={copy.moreActions} visible={overlay === 'actions'} returnFocusRef={actionsRef} onDismiss={() => setOverlay(undefined)}>
         <Button label={copy.archive} icon="archive" variant="dangerGhost" onPress={() => setOverlay('archive')} />
       </Sheet>
-      <Dialog title={copy.archive} visible={overlay === 'archive'} message={copy.archiveHelp}
+      <Dialog title={copy.archiveTitle} visible={overlay === 'archive'} message={copy.archiveHelp}
         error={archive.isError ? guidelineError(archive.error) : undefined} confirmLabel={copy.confirmArchive}
         dismissLabel={strings.routines.cancel} busy={archive.isPending} returnFocusRef={actionsRef}
         onDismiss={() => setOverlay(undefined)} onConfirm={() => { if (canManage) archive.mutate(); }} />

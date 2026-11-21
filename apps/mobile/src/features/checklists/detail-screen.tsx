@@ -139,7 +139,7 @@ function ChecklistDetail({ id }: { id?: string }) {
           />
         </View>
       )}
-      <Dialog title={copy.archive} visible={confirm} message={copy.archiveHelp}
+      <Dialog title={copy.archiveTitle} visible={confirm} message={copy.archiveHelp}
         error={archive.isError ? checklistError(archive.error) : undefined} confirmLabel={copy.confirmArchive}
         dismissLabel={strings.routines.cancel} busy={archive.isPending} returnFocusRef={archiveRef}
         onDismiss={() => setConfirm(false)} onConfirm={() => { if (canArchive) archive.mutate(); }} />
