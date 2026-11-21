@@ -76,10 +76,7 @@ export function routeMetadata(pathname: string): RouteMetadata {
     case 'execucoes':
       return { primary: 'routines', sidebar: 'checklists', top: true, title: strings.checklists.history, routineView: '/execucoes' };
     case 'checklist':
-      return {
-        primary: 'routines', sidebar: 'checklists', backTo: '/checklists',
-        title: child === 'nova' ? strings.checklists.create : action === 'editar' ? strings.checklists.edit : undefined,
-      };
+      return { primary: 'routines', sidebar: 'checklists', backTo: '/checklists' };
     case 'execucao':
       return { primary: 'routines', sidebar: 'checklists', backTo: '/execucoes', title: strings.checklists.run };
     case 'gabinete':

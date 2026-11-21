@@ -11,8 +11,9 @@ import { userIdParamsSchema } from '@gabinete-plus/shared';
 import { useSession } from '../../providers/session-provider';
 import { strings } from '../../lib/strings';
 import { Button } from '../../components/button';
+import { AppBar } from '../../components/app-bar';
 import { Choice } from '../../components/choice';
-import { useRoutine } from '../routines/hooks';
+import { routineError, useRoutine } from '../routines/hooks';
 import { LoadingState, EmptyState, ErrorState } from '../../components/feedback';
 import { displayDate } from '../dashboard/model';
 import { checklistError, useChecklistsApi, useMarkItem, useRun, useRuns, useTemplate } from './hooks';
@@ -59,14 +60,41 @@ function MarkAuthor({ id, date }: { id: string; date: string }) {
   return <AppText variant="body" style={styles.text}>{strings.checklists.marked(user?.id === id ? user.name : person.data?.name ?? strings.checklists.personUnavailable, new Date(date).toLocaleString('pt-BR'))}</AppText>;
 }
 export function ChecklistFormScreen({ mode }: { mode: 'create' | 'edit' }) {
-  const params = useLocalSearchParams(); const id = identifier(params.id); const { user } = useSession(); const query = useTemplate(mode === 'edit' && user?.role === 'CHEFE' ? id : undefined);
-  const routineId = mode === 'create' ? identifier(params.routineId) : query.data?.routineId; const routine = useRoutine(user?.role === 'CHEFE' ? routineId : undefined); const router = useRouter();
-  if (user?.role !== 'CHEFE') return <EmptyState message={strings.checklists.forbidden} />;
-  if (mode === 'edit' && !id || mode === 'create' && !routineId) return <EmptyState message={strings.checklists.notFound} />;
-  if (query.isError || routine.isError) return <ErrorState retry={() => { if (mode === 'edit' && id) void query.refetch(); if (routineId) void routine.refetch(); }} />;
-  if (mode === 'edit' && query.isPending || routine.isPending) return <LoadingState />;
-  if (query.data?.isArchived || routine.data?.isArchived) return <EmptyState message={strings.checklists.archivedError} />;
-  if (!routine.data) return <EmptyState message={strings.checklists.notFound} />;
-  return <ChecklistForm key={id ?? routineId} routine={routine.data} template={mode === 'edit' ? query.data : undefined} onSaved={(saved) => router.replace({ pathname: '/checklist/[id]', params: { id: saved.id } })}
-    onCancel={() => { if (id) router.replace({ pathname: '/checklist/[id]', params: { id } }); else router.replace({ pathname: '/rotina/[id]', params: { id: routine.data.id } }); }} />;
+  const copy = strings.checklists;
+  const params = useLocalSearchParams();
+  const id = mode === 'edit' ? identifier(params.id) : undefined;
+  const { user } = useSession();
+  const isChief = user?.role === 'CHEFE';
+  const query = useTemplate(isChief ? id : undefined);
+  const routineId = mode === 'create' ? identifier(params.routineId) : query.data?.routineId;
+  const routine = useRoutine(isChief ? routineId : undefined);
+  const router = useRouter();
+  const returnToModels = () => router.replace('/checklists');
+  const cancel = () => {
+    if (id) router.replace({ pathname: '/checklist/[id]', params: { id } });
+    else if (routineId) router.replace({ pathname: '/rotina/[id]', params: { id: routineId } });
+    else returnToModels();
+  };
+  const stateScreen = (state: ReactElement) => (
+    <Screen>
+      <AppBar title={mode === 'create' ? copy.create : copy.edit} onBack={isChief ? cancel : returnToModels} />
+      {state}
+    </Screen>
+  );
+  if (!isChief) return stateScreen(
+    <EmptyState icon="lock" message={copy.forbidden}
+      actions={<Button label={copy.returnToModels} variant="secondary" onPress={returnToModels} />} />,
+  );
+  if (mode === 'edit' ? !id : !routineId) return stateScreen(<EmptyState message={copy.notFound} />);
+  if (query.isError || routine.isError) return stateScreen(
+    <ErrorState message={query.isError ? checklistError(query.error) : routine.isError ? routineError(routine.error) : undefined}
+      retry={() => { if (query.isError) void query.refetch(); if (routine.isError) void routine.refetch(); }} />,
+  );
+  if ((mode === 'edit' && query.isPending) || routine.isPending) return stateScreen(<LoadingState />);
+  if (query.data?.isArchived || routine.data?.isArchived) return stateScreen(<EmptyState message={copy.archivedError} />);
+  if (!routine.data) return stateScreen(<EmptyState message={copy.notFound} />);
+  return (
+    <ChecklistForm key={id ?? routineId} guardNavigation routine={routine.data} template={query.data} onCancel={cancel}
+      onSaved={(saved) => router.replace({ pathname: '/checklist/[id]', params: { id: saved.id } })} />
+  );
 }

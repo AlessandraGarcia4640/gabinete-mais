@@ -45,11 +45,35 @@ it('formulário valida, usa passos da rotina e conserva dados após falha', asyn
   fetcher.mockImplementation(() => response(templateFixture())); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await waitFor(() => expect(saved).toHaveBeenCalled());
 });
 it('link direto não concede manutenção ao assessor', () => { fixture.show(<ChecklistFormScreen mode="create" />); expect(screen.getByText(strings.checklists.forbidden)).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled(); });
+it('chefia precisa entrar no cadastro por uma rotina', () => {
+  chief();
+  fixture.show(<ChecklistFormScreen mode="create" />);
+  expect(screen.getByRole('header', { name: strings.checklists.create })).toBeTruthy();
+  expect(screen.getByText(strings.checklists.notFound)).toBeTruthy();
+  expect(fetcher).not.toHaveBeenCalled();
+});
 it('edição reordena itens e envia somente o conteúdo alterado', async () => {
   chief(); const saved = jest.fn(); const template = templateFixture({ items: ['Primeiro\nOrientação', 'Segundo'] }); fetcher.mockImplementation(() => response({ ...template, items: ['Segundo', 'Primeiro\nOrientação'] }));
   fixture.show(<ChecklistForm routine={routineFixture()} template={template} onSaved={saved} onCancel={() => undefined} />); fireEvent.press(screen.getByRole('button', { name: strings.checklists.down(0) }));
   expect(screen.getByLabelText(strings.checklists.item(0)).props.value).toBe('Segundo'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await waitFor(() => expect(saved).toHaveBeenCalled());
   expect(fetcher.mock.calls[0]?.[1]?.method).toBe('PATCH'); expect(fetcher.mock.calls[0]?.[1]?.body).toBe(JSON.stringify({ items: ['Segundo', 'Primeiro\nOrientação'] }));
+});
+it('edição mostra a próxima versão, valida a lista vazia e confirma o descarte', async () => {
+  chief();
+  const cancel = jest.fn();
+  fixture.show(<ChecklistForm routine={routineFixture()} template={templateFixture({ version: 3 })}
+    onSaved={() => undefined} onCancel={cancel} />);
+  expect(screen.getByText(strings.checklists.nextVersion(3))).toBeTruthy();
+  expect(screen.getByText(strings.checklists.itemLimits)).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: strings.checklists.remove(0) }));
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  await screen.findByText(strings.checklists.invalidItems);
+  expect(fetcher).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.cancel }));
+  expect(screen.getByRole('header', { name: strings.routines.unsavedTitle })).toBeTruthy();
+  expect(cancel).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.discard }));
+  expect(cancel).toHaveBeenCalledTimes(1);
 });
 it('resposta tardia após sair não restaura o cache da execução', async () => {
   mockParams = { id: 'run-1' }; let finish: ((value: Response) => void) | undefined;
