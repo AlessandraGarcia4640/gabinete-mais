@@ -62,6 +62,36 @@ it('arquivamento pede confirmação e mantém a orientação disponível para co
   expect(mockPush).toHaveBeenCalledWith({ pathname: '/orientacao/[id]/versoes', params: { id: guide.id } });
 });
 it('rota direta de cadastro não concede manutenção ao assessor', () => { fixture.show(<GuidelineFormScreen mode="create" />); expect(screen.getByText(strings.guidelines.forbidden)).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled(); });
-it('edição usa versão original, mantém rascunho no conflito e oferece reabertura', async () => { chief(); fetcher.mockResolvedValue(new Response(JSON.stringify({ error: { code: 'GUIDELINE_VERSION_CONFLICT', message: 'Conflito' } }), { status: 409 })); fixture.show(<GuidelineForm guideline={guide} />); fireEvent.changeText(screen.getByLabelText(strings.guidelines.name), 'Rascunho preservado'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await screen.findByText(strings.guidelines.conflict); expect(screen.getByLabelText(strings.guidelines.name).props.value).toBe('Rascunho preservado'); expect(fetcher.mock.calls[0]?.[1]?.body).toContain('"expectedVersion":3'); expect(mockReplace).not.toHaveBeenCalled(); });
+it('edição mantém o rascunho ao fechar o conflito e envia a versão original', async () => {
+  chief();
+  fetcher.mockResolvedValue(new Response(JSON.stringify({ error: { code: 'GUIDELINE_VERSION_CONFLICT', message: 'Conflito' } }), { status: 409 }));
+  fixture.show(<GuidelineForm guideline={guide} />);
+  fireEvent.changeText(screen.getByLabelText(strings.guidelines.name), 'Rascunho preservado');
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  await screen.findByRole('header', { name: strings.guidelines.conflictTitle });
+  expect(screen.getByRole('button', { name: strings.guidelines.reopen })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.continueEditing }));
+  expect(screen.getByLabelText(strings.guidelines.name).props.value).toBe('Rascunho preservado');
+  expect(fetcher.mock.calls[0]?.[1]?.body).toContain('"expectedVersion":3');
+  expect(mockReplace).not.toHaveBeenCalled();
+});
+it('pré-visualização e seleção de categoria preservam o texto do editor', async () => {
+  chief();
+  fixture.show(<GuidelineForm />);
+  fireEvent.press(screen.getByRole('tab', { name: strings.guidelines.preview }));
+  expect(screen.getByText(strings.guidelines.emptyContent)).toBeTruthy();
+  fireEvent.press(screen.getByRole('tab', { name: strings.guidelines.write }));
+  fireEvent.changeText(screen.getByLabelText(strings.guidelines.content), '## Prévia fictícia');
+  fireEvent.press(screen.getByRole('button', { name: strings.guidelines.category }));
+  fireEvent.press(screen.getByRole('radio', { name: strings.guidelines.categories.PRAZOS }));
+  fireEvent.press(screen.getByRole('tab', { name: strings.guidelines.preview }));
+  expect(screen.getByText('Prévia fictícia')).toBeTruthy();
+  fireEvent.press(screen.getByRole('tab', { name: strings.guidelines.write }));
+  expect(screen.getByLabelText(strings.guidelines.content).props.value).toBe('## Prévia fictícia');
+  expect(screen.getByRole('button', { name: strings.guidelines.category }).props.accessibilityValue.text).toBe(strings.guidelines.categories.PRAZOS);
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.cancel }));
+  await screen.findByRole('header', { name: strings.routines.unsavedTitle });
+  expect(mockReplace).not.toHaveBeenCalled();
+});
 it('cadastro valida e só navega após sucesso', async () => { chief(); fetcher.mockResolvedValue(new Response(JSON.stringify(guide))); fixture.show(<GuidelineForm />); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await screen.findByText(strings.guidelines.validation.title); expect(fetcher).not.toHaveBeenCalled(); fireEvent.changeText(screen.getByLabelText(strings.guidelines.name), 'Nova orientação'); fireEvent.changeText(screen.getByLabelText(strings.guidelines.content), 'Conteúdo fictício'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await waitFor(() => expect(mockReplace).toHaveBeenCalled()); });
 it('Markdown não carrega imagens remotas nem executa HTML', () => { const rendered = fixture.show(<MarkdownContent content={'![imagem](https://example.invalid/tracker.png)\n\n<script>alert(1)</script>'} />); expect(screen.getByText(strings.guidelines.mediaNotice)).toBeTruthy(); expect(rendered.toJSON()).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled(); });

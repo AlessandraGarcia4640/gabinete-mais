@@ -322,5 +322,6 @@ export const dimensions = {
   pageMax: 1120,
   formMax: 960,
   formTextArea: 96,
+  markdownEditor: 280,
   checklistRunMax: 880,
 };
