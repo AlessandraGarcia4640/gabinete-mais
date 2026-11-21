@@ -43,6 +43,24 @@ it('busca com categoria e disponibiliza arquivadas e cadastro à chefia no paine
   expect(mockPush).toHaveBeenCalledWith('/orientacao/nova');
 });
 it('consulta exibe Markdown, autor e versão sem manutenção para assessor', async () => { fetcher.mockResolvedValue(new Response(JSON.stringify(guide))); fixture.show(<GuidelineDetailScreen />); await screen.findByText('Preparação'); expect(screen.getByText(strings.guidelines.version(3), { exact: false })).toBeTruthy(); expect(screen.queryByRole('button', { name: strings.guidelines.edit })).toBeNull(); });
+it('arquivamento pede confirmação e mantém a orientação disponível para consulta', async () => {
+  chief();
+  let archived = false;
+  fetcher.mockImplementation((_url, init) => {
+    if (init?.method === 'DELETE') { archived = true; return Promise.resolve(new Response(null, { status: 204 })); }
+    return Promise.resolve(new Response(JSON.stringify({ ...guide, isArchived: archived })));
+  });
+  fixture.show(<GuidelineDetailScreen />);
+  fireEvent.press(await screen.findByRole('button', { name: strings.guidelines.moreActions }));
+  fireEvent.press(screen.getByRole('button', { name: strings.guidelines.archive }));
+  expect(screen.getByText(strings.guidelines.archiveHelp)).toBeTruthy();
+  expect(archived).toBe(false);
+  fireEvent.press(screen.getByRole('button', { name: strings.guidelines.confirmArchive }));
+  await screen.findByText(strings.guidelines.archived);
+  expect(screen.queryByRole('button', { name: strings.guidelines.moreActions })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: strings.guidelines.history }));
+  expect(mockPush).toHaveBeenCalledWith({ pathname: '/orientacao/[id]/versoes', params: { id: guide.id } });
+});
 it('rota direta de cadastro não concede manutenção ao assessor', () => { fixture.show(<GuidelineFormScreen mode="create" />); expect(screen.getByText(strings.guidelines.forbidden)).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled(); });
 it('edição usa versão original, mantém rascunho no conflito e oferece reabertura', async () => { chief(); fetcher.mockResolvedValue(new Response(JSON.stringify({ error: { code: 'GUIDELINE_VERSION_CONFLICT', message: 'Conflito' } }), { status: 409 })); fixture.show(<GuidelineForm guideline={guide} />); fireEvent.changeText(screen.getByLabelText(strings.guidelines.name), 'Rascunho preservado'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await screen.findByText(strings.guidelines.conflict); expect(screen.getByLabelText(strings.guidelines.name).props.value).toBe('Rascunho preservado'); expect(fetcher.mock.calls[0]?.[1]?.body).toContain('"expectedVersion":3'); expect(mockReplace).not.toHaveBeenCalled(); });
 it('cadastro valida e só navega após sucesso', async () => { chief(); fetcher.mockResolvedValue(new Response(JSON.stringify(guide))); fixture.show(<GuidelineForm />); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await screen.findByText(strings.guidelines.validation.title); expect(fetcher).not.toHaveBeenCalled(); fireEvent.changeText(screen.getByLabelText(strings.guidelines.name), 'Nova orientação'); fireEvent.changeText(screen.getByLabelText(strings.guidelines.content), 'Conteúdo fictício'); fireEvent.press(screen.getByRole('button', { name: strings.routines.save })); await waitFor(() => expect(mockReplace).toHaveBeenCalled()); });

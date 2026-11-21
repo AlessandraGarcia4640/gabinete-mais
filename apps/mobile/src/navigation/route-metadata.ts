@@ -98,7 +98,7 @@ export function routeMetadata(pathname: string): RouteMetadata {
       return {
         primary: 'cabinet', sidebar: 'guidelines', backTo: '/orientacoes',
         title: child === 'nova' ? strings.guidelines.create : action === 'editar'
-          ? strings.guidelines.edit : action === 'versoes' ? strings.guidelines.history : nav.guidelines,
+          ? strings.guidelines.edit : action === 'versoes' ? strings.guidelines.history : action ? nav.guidelines : undefined,
         split: child !== 'nova' && !action ? 'guidelines' : undefined,
       };
     case 'transicao':

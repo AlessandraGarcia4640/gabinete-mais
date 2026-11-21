@@ -15,17 +15,8 @@ import { strings } from '../../lib/strings';
 import { useStyles } from '../tasks/styles';
 import { guidelineError, useGuideline, useGuidelineHistory, useGuidelinesApi } from './hooks';
 export { GuidelineListScreen } from './list-screen';
+export { GuidelineDetailScreen } from './detail-screen';
 function useId() { const params = useLocalSearchParams(); const valid = userIdParamsSchema.safeParse({ id: params.id }); return valid.success ? valid.data.id : undefined; }
-export function GuidelineDetailScreen() {
-  const styles = useStyles();
-  const id = useId(); const query = useGuideline(id); const api = useGuidelinesApi(); const { user } = useSession(); const router = useRouter(); const client = useQueryClient(); const [confirm, setConfirm] = useState(false);
-  const archive = useMutation({ retry: false, mutationFn: () => api.archive(id ?? ''), onSuccess: async () => { setConfirm(false); await Promise.all([client.invalidateQueries({ queryKey: ['guideline', id] }), client.invalidateQueries({ queryKey: ['guidelines'] })]); } });
-  if (!id) return <EmptyState message={strings.guidelines.notFound} />; if (query.isPending) return <LoadingState />; if (query.isError) return <ErrorState message={guidelineError(query.error)} retry={() => void query.refetch()} />; const g = query.data;
-  return <Screen><ScrollView contentContainerStyle={styles.content}><View style={styles.section}><AppText variant="titleLg" accessibilityRole="header" style={styles.title}>{g.title}</AppText><AppText variant="body">{strings.guidelines.categories[g.category]} · {strings.guidelines.version(g.version)}</AppText><AppText variant="body">{strings.guidelines.author}: {g.authorName} · {new Date(g.updatedAt).toLocaleString('pt-BR')}</AppText>{g.isArchived && <AppText variant="body">{strings.guidelines.archived}</AppText>}<MarkdownContent content={g.content} />
-    <Button label={strings.guidelines.history} variant="secondary" onPress={() => router.push({ pathname: '/orientacao/[id]/versoes', params: { id: g.id } })} />{archive.isError && <AppText variant="body" accessibilityRole="alert">{guidelineError(archive.error)}</AppText>}
-    {user?.role === 'CHEFE' && !g.isArchived && <><Button label={strings.guidelines.edit} disabled={archive.isPending} onPress={() => router.push({ pathname: '/orientacao/[id]/editar', params: { id: g.id } })} />{!confirm ? <Button label={strings.guidelines.archive} variant="secondary" onPress={() => setConfirm(true)} /> : <><AppText variant="body">{strings.guidelines.archiveHelp}</AppText><Button label={strings.guidelines.confirmArchive} loading={archive.isPending} onPress={() => archive.mutate()} /><Button label={strings.routines.cancel} variant="secondary" disabled={archive.isPending} onPress={() => setConfirm(false)} /></>}</>}
-  </View></ScrollView></Screen>;
-}
 export function GuidelineFormScreen({ mode }: { mode: 'create' | 'edit' }) { const id = useId(); const { user } = useSession(); const query = useGuideline(mode === 'edit' && user?.role === 'CHEFE' ? id : undefined);
   if (user?.role !== 'CHEFE') return <EmptyState message={strings.guidelines.forbidden} />; if (mode === 'edit' && !id) return <EmptyState message={strings.guidelines.notFound} />; if (mode === 'edit' && query.isPending) return <LoadingState />; if (mode === 'edit' && query.isError) return <ErrorState message={guidelineError(query.error)} retry={() => void query.refetch()} />; if (query.data?.isArchived) return <EmptyState message={strings.guidelines.archived} />;
   return <GuidelineForm key={id ?? 'new'} guideline={mode === 'edit' ? query.data : undefined} />;
