@@ -1,5 +1,5 @@
 import { AppText } from '../../components/app-text';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { Card } from '../../components/card';
 import { Screen } from '../../components/screen';
@@ -8,35 +8,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { userIdParamsSchema } from '@gabinete-plus/shared';
 import { Button } from '../../components/button';
-import { TextField } from '../../components/text-field';
 import { strings } from '../../lib/strings';
 import { createThemedStyles } from '../../providers/theme-provider';
 import { useSession } from '../../providers/session-provider';
 import { LoadingState, EmptyState, ErrorState } from '../../components/feedback';
-import { Choice } from '../../components/choice';
-import { contactError, useContact, useContacts, useContactsApi } from './hooks';
+import { contactError, useContact, useContactsApi } from './hooks';
 import { ContactForm } from './form';
-export function ContactListScreen() {
-  const styles = useStyles();
-  const router = useRouter(); const { user } = useSession(); const [archived, setArchived] = useState(false); const [keyOnly, setKeyOnly] = useState(false);
-  const [input, setInput] = useState({ q: '', organization: '', tag: '' }); const [search, setSearch] = useState(input); const query = useContacts({ ...search, archived, keyOnly });
-  const data = useMemo(() => [...new Map((query.data?.pages.flatMap((page) => page.items) ?? []).map((contact) => [contact.id, contact])).values()], [query.data]);
-  const header = <View style={styles.section}>{user?.role === 'CHEFE' && <Button label={strings.contacts.create} onPress={() => router.push('/contato/novo')} />}
-    <TextField label={strings.contacts.search} value={input.q} onChangeText={(q) => setInput({ ...input, q })} maxLength={100} />
-    <TextField label={strings.contacts.filterOrganization} value={input.organization} onChangeText={(organization) => setInput({ ...input, organization })} maxLength={200} />
-    <TextField label={strings.contacts.filterTag} value={input.tag} onChangeText={(tag) => setInput({ ...input, tag })} maxLength={40} />
-    <Button label={strings.contacts.applyFilters} variant="secondary" onPress={() => setSearch({ q: input.q.trim(), organization: input.organization.trim(), tag: input.tag.trim() })} />
-    <Button label={strings.contacts.clearFilters} variant="secondary" onPress={() => { const cleared = { q: '', organization: '', tag: '' }; setInput(cleared); setSearch(cleared); setArchived(false); setKeyOnly(false); }} />
-    <View style={styles.choices}><Choice label={strings.contacts.active} selected={!archived} onPress={() => setArchived(false)} /><Choice label={strings.contacts.archived} selected={archived} onPress={() => setArchived(true)} /></View>
-    <View style={styles.choices}><Choice label={strings.contacts.all} selected={!keyOnly} onPress={() => setKeyOnly(false)} /><Choice label={strings.contacts.keyOnly} selected={keyOnly} onPress={() => setKeyOnly(true)} /></View></View>;
-  return <Screen>{query.isPending ? <View>{header}<LoadingState /></View> : query.isError && !query.data ? <View>{header}<ErrorState retry={() => void query.refetch()} /></View> :
-    <FlashList data={data} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} ListHeaderComponent={header} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}
-      renderItem={({ item }) => <Card label={item.name} onPress={() => router.push({ pathname: '/contato/[id]', params: { id: item.id } })}>
-        <AppText variant="bodyStrong" style={styles.label}>{item.name}</AppText><AppText variant="body" style={styles.text}>{item.organization}</AppText>{!!item.jobTitle && <AppText variant="body" style={styles.text}>{item.jobTitle}</AppText>}{item.isKeyContact && <AppText variant="body">{strings.contacts.keyContact}</AppText>}{!!item.tags.length && <AppText variant="body" style={styles.text}>{item.tags.join(' · ')}</AppText>}</Card>}
-      ListEmptyComponent={query.isError ? null : <EmptyState message={strings.contacts.empty} />}
-      ListFooterComponent={<View style={styles.section}>{query.isError && <ErrorState updating retry={() => { if (query.isFetchNextPageError) void query.fetchNextPage(); else void query.refetch(); }} />}
-        {query.hasNextPage && <Button label={strings.feedback.loadMore} loading={query.isFetchingNextPage} disabled={query.isRefetching} onPress={() => void query.fetchNextPage()} />}</View>} />}</Screen>;
-}
+export { ContactListScreen } from './list-screen';
 export function ContactDetailScreen() {
   const styles = useStyles();
   const params = useLocalSearchParams(); const valid = userIdParamsSchema.safeParse({ id: params.id }); const id = valid.success ? valid.data.id : undefined;

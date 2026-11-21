@@ -17,6 +17,7 @@ Itens fora desta entrega que dependem de API, contrato, dependência ou decisão
 | Identificar orientações copiadas da rotina no cadastro | Detalhes da tarefa | O registro contém o texto atual e o vínculo, sem indicar a origem do texto nem se houve edição posterior. |
 | Eventos mais recentes no início da linha do tempo | Histórico da tarefa | O endpoint pagina por identificador em ordem crescente. Exibir primeiro os mais recentes em todo o histórico requer uma opção de ordenação no servidor. |
 | Contadores dos módulos | Gabinete | Endpoint de totais. |
+| Cabeçalhos por inicial no catálogo | Contatos | A API pagina por identificador. Para agrupar a lista completa por inicial, o cursor precisa acompanhar a ordenação por nome. |
 | Contador de pendências no item “Tarefas” | Barra lateral (web) | Mesmo endpoint de contagem do Início. |
 | Identificação institucional do gabinete abaixo da marca | Barra lateral (web) | O contrato da sessão não informa nome, número ou turma do gabinete. |
 | “Tarefas vinculadas” ao contato | Detalhes do contato | Filtro de tarefas por contato exposto para essa tela. |
