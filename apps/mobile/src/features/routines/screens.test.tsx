@@ -1,10 +1,11 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { dashboardFixture, routineFixture } from '../dashboard/fixtures.test-helper';
 import { RoutineForm } from './form';
+import { templateFixture } from '../checklists/fixtures.test-helper';
 import { RoutineDetailScreen, RoutineFormScreen, RoutineListScreen } from './screens';
 import { strings } from '../../lib/strings';
 const mockPush = jest.fn(); const mockReplace = jest.fn(); let mockParams: { id?: string; scope?: string } = {};
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace }), useLocalSearchParams: () => mockParams }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace, canGoBack: () => false }), useLocalSearchParams: () => mockParams }));
 jest.mock('@shopify/flash-list', () => { const { FlatList } = jest.requireActual<typeof import('react-native')>('react-native'); return { FlashList: FlatList }; });
 jest.mock('react-native-safe-area-context', () => { const mock = jest.requireActual<typeof import('react-native-safe-area-context/jest/mock')>('react-native-safe-area-context/jest/mock'); return mock.default; });
 let fixture: Awaited<ReturnType<typeof dashboardFixture>>; let fetcher: jest.SpyInstance<ReturnType<typeof fetch>, Parameters<typeof fetch>>; let previous: string | undefined;
@@ -85,10 +86,46 @@ it('cancelar formulário alterado requer confirmação de descarte', async () =>
 });
 it('arquivamento exige confirmação e detalhe arquivado não oferece edição', async () => {
   chief(); mockParams = { id: 'routine-1' }; let archived = false;
-  fetcher.mockImplementation((_url, init) => { if (init?.method === 'DELETE') { archived = true; return Promise.resolve(new Response(null, { status: 204 })); }
+  fetcher.mockImplementation((url, init) => { if (init?.method === 'DELETE') { archived = true; return Promise.resolve(new Response(null, { status: 204 })); }
+    if (String(url).includes('/checklists/templates?')) return Promise.resolve(new Response(JSON.stringify({ items: [], nextCursor: null })));
     return Promise.resolve(new Response(JSON.stringify(routineFixture({ isArchived: archived })))); });
   fixture.show(<RoutineDetailScreen />); await screen.findByRole('button', { name: strings.routines.archive });
   fireEvent.press(screen.getByRole('button', { name: strings.routines.archive })); expect(fetcher.mock.calls.some((call) => call[1]?.method === 'DELETE')).toBe(false);
   fireEvent.press(screen.getByRole('button', { name: strings.routines.confirmArchive })); await screen.findByText(strings.routines.archivedLabel);
   expect(screen.queryByRole('button', { name: strings.routines.edit })).toBeNull();
+});
+it('detalhe usa os modelos ativos da rotina e abre a ação de hoje com único modelo', async () => {
+  mockParams = { id: 'routine-1' };
+  const template = templateFixture({ version: 3 });
+  const routine = routineFixture({ essentialForTransition: true, steps: ['Revisar documento fictício.'] });
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    return Promise.resolve(new Response(JSON.stringify(path.pathname === '/checklists/templates' ? { items: [template], nextCursor: null } : routine)));
+  });
+  fixture.show(<RoutineDetailScreen />);
+  await screen.findByText(strings.checklists.modelSummary(strings.checklists.version(3), strings.checklists.itemCount(1)));
+  expect(screen.getByText(strings.routines.essential)).toBeTruthy();
+  expect(screen.getByLabelText(strings.routines.stepDescription(0, 'Revisar documento fictício.'))).toBeTruthy();
+  expect(screen.queryByRole('button', { name: strings.checklists.create })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.startTodayChecklist }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/checklist/[id]', params: { id: template.id } });
+  const list = fetcher.mock.calls.map(([url]) => new URL(String(url))).find(({ pathname }) => pathname === '/checklists/templates');
+  expect(list?.searchParams.get('routineId')).toBe(routine.id);
+  expect(list?.searchParams.get('isArchived')).toBe('false');
+});
+it('detalhe não sugere modelo único enquanto existir outra página', async () => {
+  mockParams = { id: 'routine-1' };
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    const page = path.searchParams.has('cursor')
+      ? { items: [templateFixture({ id: 'template-2', title: 'Segunda lista fictícia' })], nextCursor: null }
+      : { items: [templateFixture()], nextCursor: 'next-page' };
+    return Promise.resolve(new Response(JSON.stringify(path.pathname === '/checklists/templates' ? page : routineFixture())));
+  });
+  fixture.show(<RoutineDetailScreen />);
+  await screen.findByRole('button', { name: 'Checklist fictício' });
+  expect(screen.queryByRole('button', { name: strings.routines.startTodayChecklist })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore }));
+  await screen.findByRole('button', { name: 'Segunda lista fictícia' });
+  expect(screen.queryByRole('button', { name: strings.routines.startTodayChecklist })).toBeNull();
 });
