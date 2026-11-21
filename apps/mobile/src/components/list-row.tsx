@@ -17,11 +17,12 @@ interface ListRowProps {
   onPress?: () => void;
   selected?: boolean;
   accessibilityLabel?: string;
+  selectable?: boolean;
   selection?: 'radio';
 }
 
 export function ListRow({
-  title, titleVariant = 'heading', description, descriptionLines, start, end, icon, onPress, selected, accessibilityLabel, selection,
+  title, titleVariant = 'heading', description, descriptionLines, start, end, icon, onPress, selected, accessibilityLabel, selectable, selection,
 }: ListRowProps) {
   const { colors } = useTheme();
   const content = (
@@ -32,7 +33,7 @@ export function ListRow({
         </View>
       ))}
       <View style={styles.copy}>
-        <AppText variant={titleVariant} numberOfLines={2}>{title}</AppText>
+        <AppText variant={titleVariant} numberOfLines={selectable ? undefined : 2} selectable={selectable}>{title}</AppText>
         {!!description && <AppText variant="caption" color="inkMuted" numberOfLines={descriptionLines}>{description}</AppText>}
       </View>
       {end}

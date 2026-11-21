@@ -90,7 +90,7 @@ export function routeMetadata(pathname: string): RouteMetadata {
     case 'contato':
       return {
         primary: 'cabinet', sidebar: 'contacts', backTo: '/contatos',
-        title: child === 'novo' ? strings.contacts.create : action === 'editar' ? strings.contacts.edit : strings.contacts.details,
+        title: child === 'novo' ? strings.contacts.create : action === 'editar' ? strings.contacts.edit : undefined,
       };
     case 'orientacoes':
       return {

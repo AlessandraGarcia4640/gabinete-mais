@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { canOpenURL, openURL } from 'expo-linking';
 import { dashboardFixture } from '../dashboard/fixtures.test-helper';
 import { contactFixture } from './fixtures.test-helper';
 import { ContactDetailScreen, ContactFormScreen, ContactListScreen } from './screens';
@@ -7,10 +8,11 @@ import { strings } from '../../lib/strings';
 import { updateContactSchema } from '@gabinete-plus/shared';
 const mockPush = jest.fn(); const mockReplace = jest.fn(); let mockParams: { id?: string } = {};
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace, canGoBack: () => false }), useLocalSearchParams: () => mockParams }));
+jest.mock('expo-linking', () => ({ canOpenURL: jest.fn(), openURL: jest.fn() }));
 jest.mock('@shopify/flash-list', () => { const { FlatList } = jest.requireActual<typeof import('react-native')>('react-native'); return { FlashList: FlatList }; });
 jest.mock('react-native-safe-area-context', () => { const mock = jest.requireActual<typeof import('react-native-safe-area-context/jest/mock')>('react-native-safe-area-context/jest/mock'); return mock.default; });
 let fixture: Awaited<ReturnType<typeof dashboardFixture>>; let fetcher: jest.SpyInstance<ReturnType<typeof fetch>, Parameters<typeof fetch>>; let previous: string | undefined;
-beforeEach(async () => { jest.useFakeTimers(); previous = process.env.EXPO_PUBLIC_API_URL; process.env.EXPO_PUBLIC_API_URL = 'https://api.example.invalid'; fixture = await dashboardFixture(); fetcher = jest.spyOn(globalThis, 'fetch'); mockParams = {}; mockPush.mockClear(); mockReplace.mockClear(); });
+beforeEach(async () => { jest.useFakeTimers(); previous = process.env.EXPO_PUBLIC_API_URL; process.env.EXPO_PUBLIC_API_URL = 'https://api.example.invalid'; fixture = await dashboardFixture(); fetcher = jest.spyOn(globalThis, 'fetch'); mockParams = {}; mockPush.mockClear(); mockReplace.mockClear(); jest.mocked(canOpenURL).mockReset().mockResolvedValue(false); jest.mocked(openURL).mockReset().mockResolvedValue(true); });
 afterEach(() => { cleanup(); fixture.client.clear(); act(() => jest.runOnlyPendingTimers()); jest.useRealTimers(); fetcher.mockRestore(); if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL; else process.env.EXPO_PUBLIC_API_URL = previous; });
 function chief() { const user = fixture.manager.store.getState().user; if (!user) throw new Error('Usuário ausente.'); fixture.manager.store.setState({ user: { ...user, role: 'CHEFE' } }); }
 function response(value: object) { return Promise.resolve(new Response(JSON.stringify(value))); }
@@ -47,6 +49,26 @@ it('falha inicial permite tentar novamente e falha na próxima página preserva 
 it('detalhes exibem canais, etiquetas e observações; consulta não oferece edição', async () => {
   mockParams = { id: 'contact-1' }; fetcher.mockImplementation(() => response(contactFixture())); fixture.show(<ContactDetailScreen />);
   await screen.findByText('(51) 3333-4444 ramal 12'); expect(screen.getByText('secretaria@example.invalid')).toBeTruthy(); expect(screen.getByText('Contato fictício\nOrientação de atendimento.')).toBeTruthy(); expect(screen.queryByRole('button', { name: strings.contacts.edit })).toBeNull();
+  expect(screen.queryByRole('button', { name: strings.contacts.call })).toBeNull();
+  expect(screen.getByText('(51) 3333-4444 ramal 12').props.selectable).toBe(true);
+});
+it('ações consultam os esquemas suportados e preservam o telefone original na ficha', async () => {
+  mockParams = { id: 'contact-1' };
+  const contact = contactFixture({ phones: ['+1 (202) 555-0104 ramal 12', '+1 (202) 555-0105'] });
+  const first = 'tel:+12025550104;ext=12';
+  fetcher.mockImplementation(() => response(contact));
+  jest.mocked(canOpenURL).mockImplementation(async (url) => url !== 'tel:+12025550105');
+  fixture.show(<ContactDetailScreen />);
+  fireEvent.press(await screen.findByRole('button', { name: strings.contacts.call }));
+  expect(openURL).toHaveBeenLastCalledWith(first);
+  fireEvent.press(screen.getByRole('button', { name: strings.contacts.callPhone(contact.phones[0] ?? '') }));
+  expect(openURL).toHaveBeenLastCalledWith(first);
+  expect(screen.queryByRole('button', { name: strings.contacts.callPhone(contact.phones[1] ?? '') })).toBeNull();
+  expect(screen.getByText('+1 (202) 555-0105').props.selectable).toBe(true);
+  jest.mocked(openURL).mockRejectedValueOnce(new Error('Canal fictício indisponível.'));
+  fireEvent.press(screen.getByRole('button', { name: strings.contacts.writeEmail('secretaria@example.invalid') }));
+  expect(openURL).toHaveBeenLastCalledWith('mailto:secretaria@example.invalid');
+  await screen.findByText(strings.contacts.linkUnavailable);
 });
 it('link direto não concede manutenção ao assessor', () => {
   fixture.show(<ContactFormScreen mode="create" />); expect(screen.getByText(strings.contacts.forbidden)).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled();
