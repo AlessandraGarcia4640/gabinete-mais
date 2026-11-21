@@ -2,10 +2,10 @@ import { AppText } from '../../components/app-text';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useLocalSearchParams } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { transitionSectionSchema, userIdParamsSchema, type TransitionSnapshot } from '@gabinete-plus/shared';
-import { Button, Choice, Screen, Card, EmptyState, ErrorState, LoadingState } from '../../components';
+import { Choice, Screen, Card, EmptyState, ErrorState, LoadingState } from '../../components';
 import { MarkdownContent } from '../../components/markdown-content';
 import { useSession } from '../../providers/session-provider';
 import { strings } from '../../lib/strings';
@@ -24,12 +24,7 @@ function rows(kind: Kind, content: TransitionSnapshot['content']): Item[] {
 function Sections({ selected, change }: { selected: Kind; change: (kind: Kind) => void }) {
   const styles = useStyles();
   return <View style={styles.choices}><Choice label={strings.transition.overview} selected={selected === 'OVERVIEW'} onPress={() => change('OVERVIEW')} />{transitionSectionSchema.options.map((kind) => <Choice key={kind} label={strings.transition.sections[kind]} selected={selected === kind} onPress={() => change(kind)} />)}<Choice label={strings.transition.notes} selected={selected === 'NOTES'} onPress={() => change('NOTES')} /></View>; }
-export function TransitionCopiesScreen() {
-  const styles = useStyles();
-  const api = useTransitionApi(); const { user } = useSession(); const router = useRouter(); const query = useInfiniteQuery({ queryKey: ['transition-copies', user?.id], enabled: !!user, retry: false, initialPageParam: '', queryFn: ({ pageParam, signal }) => api.list(pageParam, signal), getNextPageParam: (page) => page.nextCursor || undefined });
-  if (query.isPending) return <LoadingState />; if (query.isError && !query.data) return <ErrorState message={errorMessage(query.error)} retry={() => void query.refetch()} />;
-  return <Screen><FlashList data={query.data?.pages.flatMap((page) => page.items) ?? []} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} renderItem={({ item }) => <Card label={item.title} onPress={() => router.push({ pathname: '/transicao/copia/[id]', params: { id: item.id } })}><AppText variant="bodyStrong" style={styles.label}>{item.title}</AppText><AppText variant="body">{strings.guidelines.version(item.version)} · {item.authorName} · {new Date(item.createdAt).toLocaleString('pt-BR')}</AppText></Card>} ListEmptyComponent={<EmptyState message={strings.transition.empty} />} ListFooterComponent={<View>{query.isError && <ErrorState updating retry={() => void query.refetch()} />}{query.hasNextPage && <Button label={strings.feedback.loadMore} loading={query.isFetchingNextPage} onPress={() => void query.fetchNextPage()} />}</View>} /></Screen>;
-}
+export { TransitionCopiesScreen } from './copies-screen';
 export function TransitionCopyScreen() {
   const styles = useStyles();
   const params = useLocalSearchParams(); const valid = userIdParamsSchema.safeParse({ id: params.id }); const api = useTransitionApi(); const { user } = useSession(); const [kind, setKind] = useState<Kind>('OVERVIEW'); const query = useQuery({ queryKey: ['transition-copy', params.id, user?.id], enabled: valid.success && !!user, retry: false, queryFn: ({ signal }) => api.get(valid.success ? valid.data.id : '', signal) });

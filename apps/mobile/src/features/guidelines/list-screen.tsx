@@ -7,10 +7,11 @@ import {
   AppBar, AppText, Button, Card, Chip, ChipGroup, EmptyState, ErrorState, Fab, Icon, LoadingState, Screen, SearchField, Tag,
 } from '../../components';
 import { strings } from '../../lib/strings';
+import { formatRecordDate } from '../../lib/date-time';
 import { dimensions, iconSize, size, spacing } from '../../lib/theme';
 import { useSession } from '../../providers/session-provider';
 import { guidelineError, useGuidelines } from './hooks';
-import { guidelineDate, guidelineExcerpt } from './model';
+import { guidelineExcerpt } from './model';
 
 const copy = strings.guidelines;
 
@@ -74,7 +75,7 @@ export function GuidelineListScreen({ selectedId, pane = false }: { selectedId?:
               <View style={styles.metadata}>
                 <Icon name="clock" size={iconSize.extraSmall} color="inkMuted" />
                 <AppText variant="caption" color="inkMuted" style={styles.metadataText}>
-                  {copy.listMetadata(copy.version(item.version), guidelineDate(item.updatedAt), item.authorName)}
+                  {copy.listMetadata(copy.version(item.version), formatRecordDate(item.updatedAt), item.authorName)}
                 </AppText>
               </View>
             </Card>

@@ -7,12 +7,12 @@ import {
   AppBar, Banner, Button, EmptyState, ErrorState, Icon, ListRow, LoadingState, MarkdownContent, Screen, Tag,
 } from '../../components';
 import { ListGroupItem } from '../../components/list-group';
+import { formatRecordDate, formatRecordTime } from '../../lib/date-time';
 import { strings } from '../../lib/strings';
 import { iconSize, radius, size, spacing } from '../../lib/theme';
 import { useSession } from '../../providers/session-provider';
 import { useTheme } from '../../providers/theme-provider';
 import { guidelineError, useGuideline, useGuidelineHistory, useGuidelinesApi } from './hooks';
-import { guidelineDate, guidelineTime } from './model';
 
 const copy = strings.guidelines;
 
@@ -47,7 +47,7 @@ export function GuidelineHistoryScreen() {
               <ListGroupItem first={index === 0} last={index === versions.length - 1}>
                 <ListRow title={title}
                   accessibilityLabel={latest ? copy.currentVersionLabel(title) : title}
-                  description={copy.historyMetadata(guidelineDate(item.createdAt), guidelineTime(item.createdAt), item.authorName)}
+                  description={copy.historyMetadata(formatRecordDate(item.createdAt), formatRecordTime(item.createdAt), item.authorName)}
                   descriptionLines={1} start={<VersionIcon current={latest} />} end={latest && <Tag label={copy.current} />}
                   onPress={() => router.push({
                     pathname: '/orientacao/[id]/versao/[version]',
@@ -107,7 +107,7 @@ export function GuidelineVersionScreen() {
         <ErrorState message={guidelineError(query.error)} retry={() => void query.refetch()} />
       ) : entry && (
         <ScrollView contentContainerStyle={styles.reading}>
-          <Banner tone="info" message={previous(guidelineDate(entry.createdAt), entry.version)} />
+          <Banner tone="info" message={previous(formatRecordDate(entry.createdAt), entry.version)} />
           {current.isError && !current.data && <ErrorState updating retry={() => void current.refetch()} />}
           <MarkdownContent content={entry.content} />
           <Button label={copy.openCurrent} variant="secondary" onPress={() => {

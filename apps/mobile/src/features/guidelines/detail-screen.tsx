@@ -8,11 +8,11 @@ import {
   LoadingState, MarkdownContent, Screen, Sheet, Tag, type IconName,
 } from '../../components';
 import { useSplitView } from '../../components/split-view';
+import { formatRecordDate } from '../../lib/date-time';
 import { strings } from '../../lib/strings';
 import { iconSize, size, spacing } from '../../lib/theme';
 import { useSession } from '../../providers/session-provider';
 import { guidelineError, useGuideline, useGuidelinesApi } from './hooks';
-import { guidelineDate } from './model';
 
 const copy = strings.guidelines;
 
@@ -76,7 +76,7 @@ function GuidelineDetail({ id }: { id?: string }) {
             <AppText variant="titleLg" accessibilityRole="header" selectable>{guideline.title}</AppText>
             <View style={styles.wrap}>
               <Metadata icon="clock" value={copy.version(guideline.version)} />
-              <Metadata icon="calendar" value={guidelineDate(guideline.updatedAt)} />
+              <Metadata icon="calendar" value={formatRecordDate(guideline.updatedAt)} />
               <Metadata icon="user" value={guideline.authorName} />
             </View>
           </View>

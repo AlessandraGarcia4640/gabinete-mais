@@ -102,7 +102,7 @@ export function routeMetadata(pathname: string): RouteMetadata {
     case 'transicao':
       return {
         primary: 'cabinet', sidebar: 'transition', backTo: child ? '/transicao' : '/gabinete',
-        title: child && child !== 'preparar' ? strings.transition.copies : undefined,
+        title: child === 'copia' ? strings.transition.copies : undefined,
       };
     case 'perfil':
       return { primary: 'profile', sidebar: 'profile', top: true };
