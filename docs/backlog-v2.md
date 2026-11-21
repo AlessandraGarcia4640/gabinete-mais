@@ -11,6 +11,7 @@ Itens fora desta entrega que dependem de API, contrato, dependência ou decisão
 | Contadores por seção | Guia de transição | Total por seção na resposta do guia. |
 | Nome da rotina na lista de modelos | Modelos de checklist | Título da rotina no item da listagem. |
 | Histórico de execuções de todos os modelos de uma rotina | Detalhes da rotina | O endpoint de execuções tem filtro por modelo, sem filtro por rotina. |
+| Identificar tarefa vinculada ao abrir uma execução pelo histórico | Execução de checklist | A execução não inclui o ID da tarefa e a listagem de tarefas não aceita filtro por execução. O atalho de retorno está disponível quando a entrada ocorre pelos detalhes da tarefa. |
 | Selo de progresso do checklist nas rotinas de hoje | Início | Dado de execução do dia na listagem de rotinas. |
 | Dia da semana e ocorrência recorrente no resumo da rotina | Início | Agenda recorrente estruturada. O filtro atual inclui rotinas diárias sem data específica e rotinas cuja data específica coincide com o dia. |
 | “N tarefas abertas” por integrante | Folha “Escolher responsável” | Contagem por pessoa na API de usuários/tarefas. |

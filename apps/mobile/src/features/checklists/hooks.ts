@@ -11,6 +11,13 @@ import { optimisticMark } from './model';
 export function useChecklistsApi() { const manager = useSessionManager(); return useMemo(() => new ChecklistsApi(new HttpAuthApi(manager.apiUrl), manager), [manager]); }
 export function useTemplate(id?: string) { const api = useChecklistsApi(); const { user } = useSession(); return useQuery({ queryKey: ['checklist-template', id, user?.id], enabled: !!id && !!user, retry: false, queryFn: ({ signal }) => api.template(id ?? '', signal) }); }
 export function useRun(id?: string) { const api = useChecklistsApi(); const { user } = useSession(); return useQuery({ queryKey: ['checklist-run', id, user?.id], enabled: !!id && !!user, retry: false, queryFn: ({ signal }) => api.run(id ?? '', signal) }); }
+export function useChecklistPersonName(id?: string) {
+  const api = useChecklistsApi();
+  const { user } = useSession();
+  const person = useQuery({ queryKey: ['checklist-person', id, user?.id],
+    enabled: !!id && !!user && user.id !== id, retry: false, queryFn: ({ signal }) => api.person(id ?? '', signal) });
+  return (id === user?.id ? user?.name : person.data?.name) ?? strings.checklists.personUnavailable;
+}
 export function useTemplates(archived: boolean, routineId?: string) {
   const api = useChecklistsApi(); const { user } = useSession();
   return useInfiniteQuery({ queryKey: ['checklist-templates', user?.id, archived, routineId], enabled: !!user, retry: false, initialPageParam: '',

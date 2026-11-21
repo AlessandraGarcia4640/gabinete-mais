@@ -14,12 +14,18 @@ export function ProgressBar({ completed, total, label }: ProgressBarProps) {
   const { colors } = useTheme();
   const current = Math.max(0, Math.min(completed, total));
   const part = total > 0 ? current / total : 0;
+  const description = strings.checklists.progress(current, total);
   return (
     <View
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={label}
-      accessibilityValue={{ min: 0, max: total, now: current, text: strings.checklists.progress(current, total) }}
+      accessibilityValue={{ min: 0, max: total, now: current, text: description }}
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-valuenow={current}
+      aria-valuetext={description}
+      accessibilityLiveRegion="polite"
       style={styles.progress}
     >
       <View style={styles.labels}>

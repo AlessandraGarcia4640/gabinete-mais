@@ -18,12 +18,12 @@ export function ListGroup({ label, children }: PropsWithChildren<{ label?: strin
   );
 }
 
-export function ListGroupItem({ first, last, children }: PropsWithChildren<{ first: boolean; last: boolean }>) {
+export function ListGroupItem({ first, last, divider, children }: PropsWithChildren<{ first: boolean; last: boolean; divider?: boolean }>) {
   const { colors } = useTheme();
   return (
     <View style={[
       styles.item, { backgroundColor: colors.surface, borderColor: colors.border },
-      first && styles.first, last && styles.last,
+      first && styles.first, last && styles.last, !first && divider && styles.divider,
     ]}>
       {children}
     </View>
@@ -36,4 +36,5 @@ const styles = StyleSheet.create({
   item: { borderStartWidth: line.thin, borderEndWidth: line.thin },
   first: { borderTopWidth: line.thin, borderTopStartRadius: radius.lg, borderTopEndRadius: radius.lg },
   last: { borderBottomWidth: line.thin, borderBottomStartRadius: radius.lg, borderBottomEndRadius: radius.lg },
+  divider: { borderTopWidth: line.thin },
 });

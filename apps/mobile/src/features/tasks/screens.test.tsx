@@ -81,7 +81,7 @@ it('checklist incompleto desabilita conclusão, informa o progresso e oferece o 
   expect(screen.getByText(strings.dashboard.status.EM_ANDAMENTO, { exact: false })).toBeTruthy();
   const run = runFixture();
   expect(screen.getByText(strings.checklists.progressFraction(run.completedItems, run.totalItems))).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'Checklist fictício' })); expect(mockPush).toHaveBeenCalledWith({ pathname: '/execucao/[id]', params: { id: 'run-1' } });
+  fireEvent.press(screen.getByRole('button', { name: 'Checklist fictício' })); expect(mockPush).toHaveBeenCalledWith({ pathname: '/execucao/[id]', params: { id: 'run-1', taskId: task.id } });
 });
 it('erro de conclusão recebido após mudança concorrente no checklist continua mapeado', async () => {
   mockParams = { id: 'task-1' };

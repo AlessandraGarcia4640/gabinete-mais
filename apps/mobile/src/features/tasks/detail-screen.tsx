@@ -137,7 +137,7 @@ export function TaskDetail({ id }: { id?: string }) {
         {task.checklistRunId && (
           <ListRow title={run.data?.titleSnapshot ?? copy.run} description={progress && copy.checklistSummary(progress)} icon="list"
             end={run.data && <StatusBadge status={run.data.status} label={strings.checklists.progressFraction(run.data.completedItems, run.data.totalItems)} />}
-            onPress={() => router.push({ pathname: '/execucao/[id]', params: { id: task.checklistRunId ?? '' } })} />
+            onPress={() => router.push({ pathname: '/execucao/[id]', params: { id: task.checklistRunId ?? '', taskId: task.id } })} />
         )}
         {task.contactId && (
           <ListRow title={contact.data?.name ?? copy.contact} description={contact.data ? copy.contact : undefined} icon="users"

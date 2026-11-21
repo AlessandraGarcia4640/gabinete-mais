@@ -20,6 +20,7 @@ export function Checkbox({ label, checked, onChange, disabled = false, attributi
       accessibilityRole="checkbox"
       accessibilityLabel={label}
       accessibilityHint={attribution}
+      aria-checked={checked}
       accessibilityState={{ checked, disabled }}
       disabled={disabled}
       onPress={() => onChange(!checked)}

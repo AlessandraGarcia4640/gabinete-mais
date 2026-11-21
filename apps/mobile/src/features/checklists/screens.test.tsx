@@ -1,11 +1,11 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
-import { dashboardFixture, routineFixture } from '../dashboard/fixtures.test-helper';
+import { dashboardFixture, routineFixture, taskFixture } from '../dashboard/fixtures.test-helper';
 import { templateFixture, runFixture } from './fixtures.test-helper';
 import { ChecklistDetailScreen, ChecklistFormScreen, ChecklistHistoryScreen, ChecklistListScreen, ChecklistRunScreen } from './screens';
 import { ChecklistForm } from './form';
 import { optimisticMark } from './model';
 import { strings } from '../../lib/strings';
-const mockPush = jest.fn(); const mockReplace = jest.fn(); let mockParams: { id?: string; routineId?: string; templateId?: string } = {};
+const mockPush = jest.fn(); const mockReplace = jest.fn(); let mockParams: { id?: string; routineId?: string; templateId?: string; taskId?: string } = {};
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: mockReplace, canGoBack: () => false }), useLocalSearchParams: () => mockParams }));
 jest.mock('@shopify/flash-list', () => { const { FlatList } = jest.requireActual<typeof import('react-native')>('react-native'); return { FlashList: FlatList }; });
 jest.mock('react-native-safe-area-context', () => { const mock = jest.requireActual<typeof import('react-native-safe-area-context/jest/mock')>('react-native-safe-area-context/jest/mock'); return mock.default; });
@@ -78,7 +78,7 @@ it('edição mostra a próxima versão, valida a lista vazia e confirma o descar
 it('resposta tardia após sair não restaura o cache da execução', async () => {
   mockParams = { id: 'run-1' }; let finish: ((value: Response) => void) | undefined;
   fetcher.mockImplementation((_url, init) => init?.method === 'PATCH' ? new Promise<Response>((resolve) => { finish = resolve; }) : response(runFixture()));
-  fixture.show(<ChecklistRunScreen />); await screen.findByRole('checkbox'); fireEvent.press(screen.getByRole('checkbox')); await screen.findByText(strings.checklists.progress(1, 1));
+  fixture.show(<ChecklistRunScreen />); await screen.findByRole('checkbox'); fireEvent.press(screen.getByRole('checkbox')); await screen.findByRole('progressbar', { value: { now: 1 } });
   await act(async () => { cleanup(); await fixture.manager.logout(); if (!finish) throw new Error('Requisição ausente.'); finish(new Response(JSON.stringify(optimisticMark(runFixture(), 'item-1', true, 'actor')))); });
   expect(fixture.client.getQueryData(['checklist-run', 'run-1', 'actor'])).toBeUndefined();
 });
@@ -113,17 +113,39 @@ it('marcação otimista aparece antes da resposta e reverte em recusa de tarefa 
   mockParams = { id: 'run-1' }; let fail: ((value: Response) => void) | undefined;
   fetcher.mockImplementation((_url, init) => init?.method === 'PATCH' ? new Promise<Response>((resolve) => { fail = resolve; }) : response(runFixture()));
   fixture.show(<ChecklistRunScreen />); await screen.findByRole('checkbox', { name: 'Conferir caixa' }); fireEvent.press(screen.getByRole('checkbox', { name: 'Conferir caixa' }));
-  await screen.findByText(strings.checklists.progress(1, 1)); expect(screen.getByRole('checkbox').props.accessibilityState.disabled).toBe(true);
+  await screen.findByRole('progressbar', { value: { now: 1 } }); expect(screen.getByRole('checkbox').props.accessibilityState.disabled).toBe(true);
   await act(async () => { if (!fail) throw new Error('Requisição ausente.'); fail(new Response(JSON.stringify({ error: { code: 'CHECKLIST_TASK_COMPLETED', message: 'Conflito' } }), { status: 409 })); });
-  await screen.findByText(strings.checklists.completedTask); await screen.findByText(strings.checklists.progress(0, 1)); expect(screen.getByRole('checkbox').props.accessibilityState.checked).toBe(false);
+  await screen.findByText(strings.checklists.completedTask); await screen.findByRole('progressbar', { value: { now: 0 } }); expect(screen.getByRole('checkbox').props.accessibilityState.checked).toBe(false);
 });
 it('marcar e desmarcar confirma a resposta do servidor', async () => {
   mockParams = { id: 'run-1' }; let run = runFixture(); fetcher.mockImplementation((_url, init) => { if (init?.method === 'PATCH') run = optimisticMark(run, 'item-1', run.completedItems === 0, 'actor'); return response(run); });
-  fixture.show(<ChecklistRunScreen />); await screen.findByRole('checkbox'); fireEvent.press(screen.getByRole('checkbox')); await screen.findByText(strings.checklists.progress(1, 1)); await waitFor(() => expect(screen.getByRole('checkbox').props.accessibilityState.disabled).toBe(false));
-  expect(screen.getByRole('checkbox').props.accessibilityState.checked).toBe(true); fireEvent.press(screen.getByRole('checkbox')); await screen.findByText(strings.checklists.progress(0, 1));
+  fixture.show(<ChecklistRunScreen />); await screen.findByRole('checkbox'); fireEvent.press(screen.getByRole('checkbox')); await screen.findByRole('progressbar', { value: { now: 1 } }); await waitFor(() => expect(screen.getByRole('checkbox').props.accessibilityState.disabled).toBe(false));
+  expect(screen.getByRole('checkbox').props.accessibilityState.checked).toBe(true); fireEvent.press(screen.getByRole('checkbox')); await screen.findByRole('progressbar', { value: { now: 0 } });
 });
 it('outra pessoa consulta snapshot mas não pode marcar', async () => { mockParams = { id: 'run-1' }; fetcher.mockImplementation(() => response(runFixture({ assigneeId: 'other' }))); fixture.show(<ChecklistRunScreen />);
-  await screen.findByText('Orientação preservada'); expect(screen.getByRole('checkbox').props.accessibilityState.disabled).toBe(true); fireEvent.press(screen.getByRole('checkbox')); expect(fetcher.mock.calls.some((call) => call[1]?.method === 'PATCH')).toBe(false);
+  await screen.findByText(strings.checklists.readOnly);
+  expect(screen.getByRole('checkbox').props.accessibilityState.disabled).toBe(true);
+  fireEvent.press(screen.getByRole('checkbox'));
+  expect(fetcher.mock.calls.some((call) => call[1]?.method === 'PATCH')).toBe(false);
+  fireEvent.press(screen.getByRole('button', { name: strings.checklists.showInstructions }));
+  await screen.findByText('Orientação preservada');
+});
+it.each([true, false])('execução concluída confirma o vínculo da tarefa antes de oferecer o atalho (%s)', async (matches) => {
+  mockParams = { id: 'run-1', taskId: 'task-1' };
+  const run = optimisticMark(runFixture(), 'item-1', true, 'actor', '2026-10-12T13:00:00Z');
+  const task = taskFixture({ id: 'task-1', checklistRunId: matches ? run.id : 'different-run' });
+  fetcher.mockImplementation((url) => response(String(url).includes('/tasks/') ? task : run));
+  fixture.show(<ChecklistRunScreen />);
+  await screen.findByRole('progressbar', { value: { now: 1, max: 1 } });
+  expect(screen.getByText(/12\/10 às 10:00/)).toBeTruthy();
+  if (matches) {
+    await screen.findByText(strings.checklists.completeWithTask);
+    fireEvent.press(screen.getByRole('button', { name: strings.checklists.openLinkedTask }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/tarefa/[id]', params: { id: task.id } });
+  } else {
+    expect(screen.getByText(strings.checklists.complete)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: strings.checklists.openLinkedTask })).toBeNull();
+  }
 });
 it('arquiva somente com confirmação e mantém acesso ao histórico', async () => {
   chief(); mockParams = { id: 'template-1' }; let archived = false; fetcher.mockImplementation((url, init) => {

@@ -2,11 +2,9 @@ import { AppText } from '../../components/app-text';
 import { useState, type ReactElement } from 'react';
 import { View } from 'react-native';
 import { Card } from '../../components/card';
-import { Checkbox } from '../../components/checkbox';
 import { Screen } from '../../components/screen';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
 import { userIdParamsSchema } from '@gabinete-plus/shared';
 import { useSession } from '../../providers/session-provider';
 import { strings } from '../../lib/strings';
@@ -16,11 +14,12 @@ import { Choice } from '../../components/choice';
 import { routineError, useRoutine } from '../routines/hooks';
 import { LoadingState, EmptyState, ErrorState } from '../../components/feedback';
 import { displayDate } from '../dashboard/model';
-import { checklistError, useChecklistsApi, useMarkItem, useRun, useRuns, useTemplate } from './hooks';
+import { checklistError, useRuns, useTemplate } from './hooks';
 import { ChecklistForm } from './form';
 import { useStyles } from './styles';
 export { ChecklistListScreen } from './list-screen';
 export { ChecklistDetailScreen } from './detail-screen';
+export { ChecklistRunScreen } from './run-screen';
 function identifier(value: string | string[] | undefined): string | undefined { const valid = userIdParamsSchema.safeParse({ id: value }); return valid.success ? valid.data.id : undefined; }
 function Page<T extends { id: string }>({ data, query, header, empty, render }: { data: T[]; header: ReactElement; empty: string; render: (item: T) => ReactElement;
   query: { isPending: boolean; isError: boolean; isRefetching: boolean; isFetchingNextPage: boolean; hasNextPage: boolean; isFetchNextPageError: boolean; refetch: () => Promise<object>; fetchNextPage: () => Promise<object> } }) {
@@ -38,26 +37,6 @@ export function ChecklistHistoryScreen() {
     header={<View style={styles.section}><View style={styles.choices}><Choice label={strings.checklists.mine} selected={mine} onPress={() => setMine(true)} /><Choice label={strings.checklists.allRuns} selected={!mine} onPress={() => setMine(false)} /></View></View>}
     render={(item) => <Card label={`${item.titleSnapshot} ${displayDate(item.periodStart)}`} onPress={() => router.push({ pathname: '/execucao/[id]', params: { id: item.id } })}>
       <AppText variant="bodyStrong" style={styles.label}>{item.titleSnapshot}</AppText><AppText variant="body">{item.routineTitleSnapshot}</AppText><AppText variant="body">{displayDate(item.periodStart)} · {strings.checklists.status[item.status]}</AppText><AppText variant="body">{strings.checklists.progress(item.completedItems, item.totalItems)}</AppText></Card>} />;
-}
-export function ChecklistRunScreen() {
-  const styles = useStyles();
-  const params = useLocalSearchParams(); const id = identifier(params.id); const query = useRun(id); const mark = useMarkItem(id); const { user } = useSession();
-  if (!id) return <EmptyState message={strings.checklists.notFound} />;
-  if (query.isPending) return <LoadingState />;
-  if (query.isError) return <View><AppText variant="caption" style={styles.error}>{checklistError(query.error)}</AppText><ErrorState retry={() => void query.refetch()} /></View>;
-  const run = query.data; const editable = user?.role === 'CHEFE' || run.assigneeId === user?.id;
-  return <Screen><FlashList data={run.items} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} refreshing={query.isRefetching} onRefresh={() => void query.refetch()}
-    ListHeaderComponent={<View style={styles.section}><AppText variant="titleLg" accessibilityRole="header" style={styles.title}>{run.titleSnapshot}</AppText><AppText variant="body">{run.routineTitleSnapshot}</AppText><AppText variant="body">{displayDate(run.periodStart)} · {strings.checklists.version(run.templateVersion)}</AppText>
-      <AppText variant="body">{strings.checklists.status[run.status]}</AppText><AppText variant="body" accessibilityLiveRegion="polite">{strings.checklists.progress(run.completedItems, run.totalItems)}</AppText>
-      <AppText variant="body">{strings.checklists.snapshot}</AppText><AppText variant="body" style={styles.text}>{run.instructionsSnapshot}</AppText><AppText variant="body">{run.assigneeId === user?.id ? strings.checklists.owner : editable ? strings.checklists.chiefCanMark : strings.checklists.readOnly}</AppText>
-      {mark.isError && <AppText variant="caption" accessibilityRole="alert" style={styles.error}>{checklistError(mark.error)}</AppText>}</View>}
-    renderItem={({ item }) => <Card><Checkbox label={item.text} checked={item.isCompleted} disabled={!editable || mark.isPending || query.isRefetching} onChange={(done) => mark.mark(item.id, done)} />
-      {item.completedById && item.completedAt && <MarkAuthor id={item.completedById} date={item.completedAt} />}</Card>} /></Screen>;
-}
-function MarkAuthor({ id, date }: { id: string; date: string }) {
-  const styles = useStyles();
-  const api = useChecklistsApi(); const { user } = useSession(); const person = useQuery({ queryKey: ['checklist-person', id, user?.id], enabled: !!user && user.id !== id, retry: false, queryFn: ({ signal }) => api.person(id, signal) });
-  return <AppText variant="body" style={styles.text}>{strings.checklists.marked(user?.id === id ? user.name : person.data?.name ?? strings.checklists.personUnavailable, new Date(date).toLocaleString('pt-BR'))}</AppText>;
 }
 export function ChecklistFormScreen({ mode }: { mode: 'create' | 'edit' }) {
   const copy = strings.checklists;
