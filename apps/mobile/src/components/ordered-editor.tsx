@@ -30,7 +30,7 @@ export function OrderedEditor({ position, field, up, down, remove }: OrderedEdit
       <View style={styles.actions}>
         <IconButton icon="arrow-up" {...up} />
         <IconButton icon="arrow-down" {...down} />
-        <IconButton icon="x" color="danger" {...remove} />
+        <IconButton icon="trash-2" {...remove} />
       </View>
     </View>
   );
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.space2,
     padding: spacing.space2, borderRadius: radius.md, borderWidth: line.control,
   },
-  content: { flex: 1, minWidth: '55%', flexDirection: 'row', alignItems: 'center', gap: spacing.space2 },
+  content: { flex: 1, minWidth: '45%', flexDirection: 'row', alignItems: 'center', gap: spacing.space2 },
   number: { minWidth: iconSize.standard, textAlign: 'center' },
   field: { flex: 1 },
   actions: { flexDirection: 'row', marginStart: 'auto' },

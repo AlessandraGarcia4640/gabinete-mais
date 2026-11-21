@@ -51,7 +51,12 @@ it('escopo de hoje compartilha a frequência e não antecipa contagens de págin
   expect(mockPush).toHaveBeenCalledWith('/rotina/nova');
 });
 it('link direto de criação não habilita manutenção para assessor', async () => {
-  fixture.show(<RoutineFormScreen mode="create" />); expect(screen.getByText(strings.routines.forbidden)).toBeTruthy(); expect(fetcher).not.toHaveBeenCalled();
+  fixture.show(<RoutineFormScreen mode="create" />);
+  expect(screen.getByRole('header', { name: strings.routines.forbiddenTitle })).toBeTruthy();
+  expect(screen.getByText(strings.routines.forbidden)).toBeTruthy();
+  expect(fetcher).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.backToList }));
+  expect(mockReplace).toHaveBeenCalledWith('/rotinas');
 });
 it('formulário bloqueia dados inválidos, preserva entrada em falha e permite tentar salvar', async () => {
   chief(); const saved = jest.fn(); fetcher.mockResolvedValue(new Response(JSON.stringify({ error: { code: 'INTERNAL_ERROR', message: 'Interno' } }), { status: 503 }));
@@ -82,7 +87,37 @@ it('reordenar passos mantém o conteúdo multiline e altera somente steps', asyn
 it('cancelar formulário alterado requer confirmação de descarte', async () => {
   chief(); const cancel = jest.fn(); fixture.show(<RoutineForm onSaved={() => undefined} onCancel={cancel} />);
   fireEvent.changeText(screen.getByLabelText(strings.routines.name), 'Rascunho fictício'); fireEvent.press(screen.getByRole('button', { name: strings.routines.cancel }));
-  expect(screen.getByText(strings.routines.unsavedTitle)).toBeTruthy(); expect(cancel).not.toHaveBeenCalled(); fireEvent.press(screen.getByRole('button', { name: strings.routines.discard })); expect(cancel).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('header', { name: strings.routines.unsavedTitle })).toBeTruthy();
+  expect(cancel).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.discard }));
+  expect(cancel).toHaveBeenCalledTimes(1);
+});
+it('configura frequência personalizada, cargo e guia de transição sem mudar o payload', async () => {
+  chief();
+  const saved = jest.fn();
+  fetcher.mockImplementation(() => Promise.resolve(new Response(JSON.stringify(routineFixture()), { status: 201 })));
+  fixture.show(<RoutineForm onSaved={saved} onCancel={() => undefined} />);
+  expect(screen.queryByLabelText(strings.routines.frequencyDetails)).toBeNull();
+  fireEvent.changeText(screen.getByLabelText(strings.routines.name), 'Rotina fictícia personalizada');
+  fireEvent.changeText(screen.getByLabelText(strings.routines.category), 'Sessões fictícias');
+  fireEvent.press(screen.getByRole('radio', { name: strings.dashboard.frequency.PERSONALIZADA }));
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  await screen.findByText(strings.routines.validation.frequencyDetails);
+  expect(fetcher).not.toHaveBeenCalled();
+  fireEvent.changeText(screen.getByLabelText(strings.routines.frequencyDetails), 'Quando a pauta fictícia for publicada.');
+  fireEvent.changeText(screen.getByLabelText(strings.routines.specificDate), '01/02/2027');
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.defaultPosition }));
+  fireEvent.press(screen.getByRole('radio', { name: strings.routines.positions.APOIO }));
+  fireEvent.press(screen.getByRole('switch', { name: strings.routines.essential }));
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.addStep }));
+  fireEvent.changeText(screen.getByLabelText(strings.routines.step(0)), 'Revisar a pauta fictícia.');
+  fireEvent.press(screen.getByRole('button', { name: strings.routines.save }));
+  await waitFor(() => expect(saved).toHaveBeenCalled());
+  expect(fetcher.mock.calls[0]?.[1]?.body).toBe(JSON.stringify({
+    title: 'Rotina fictícia personalizada', category: 'Sessões fictícias', frequency: 'PERSONALIZADA',
+    description: '', instructions: '', steps: ['Revisar a pauta fictícia.'], frequencyDetails: 'Quando a pauta fictícia for publicada.',
+    specificDate: '2027-02-01', defaultPosition: 'APOIO', essentialForTransition: true,
+  }));
 });
 it('arquivamento exige confirmação e detalhe arquivado não oferece edição', async () => {
   chief(); mockParams = { id: 'routine-1' }; let archived = false;

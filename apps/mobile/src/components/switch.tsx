@@ -19,6 +19,7 @@ export function Switch({ label, description, checked, onChange, disabled = false
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityHint={description}
+      aria-checked={checked}
       accessibilityState={{ checked, disabled }}
       disabled={disabled}
       onPress={() => onChange(!checked)}

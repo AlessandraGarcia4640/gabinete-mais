@@ -12,6 +12,7 @@ interface FieldMessages {
   help?: string;
   errorText?: string;
   optional?: boolean;
+  hideLabel?: boolean;
 }
 
 interface TextFieldProps extends FieldMessages, TextInputProps {
@@ -20,13 +21,13 @@ interface TextFieldProps extends FieldMessages, TextInputProps {
   ref?: Ref<TextInput>;
 }
 
-export function FieldFrame({ label, help, errorText, optional, children }: PropsWithChildren<FieldMessages>) {
+export function FieldFrame({ label, help, errorText, optional, hideLabel, children }: PropsWithChildren<FieldMessages>) {
   return (
     <View style={frameStyles.field}>
-      <AppText variant="label">
+      {!hideLabel && <AppText variant="label">
         {label}
         {optional && <AppText variant="caption" color="inkMuted">{strings.forms.optional}</AppText>}
-      </AppText>
+      </AppText>}
       {children}
       {!!errorText && (
         <View style={frameStyles.error}>
@@ -41,14 +42,14 @@ export function FieldFrame({ label, help, errorText, optional, children }: Props
   );
 }
 
-export function TextField({ label, help, errorText, optional, style, mono, accessory, ref, onFocus, onBlur, ...props }: TextFieldProps) {
+export function TextField({ label, help, errorText, optional, hideLabel, style, mono, accessory, ref, onFocus, onBlur, ...props }: TextFieldProps) {
   const styles = useStyles();
   const { colors } = useTheme();
   const fontsLoaded = useAppFonts();
   const [focused, setFocused] = useState(false);
   const ring = useFocusRing(focused);
   return (
-    <FieldFrame label={label} help={help} errorText={errorText} optional={optional}>
+    <FieldFrame label={label} help={help} errorText={errorText} optional={optional} hideLabel={hideLabel}>
       <View>
         <TextInput
           {...props}
