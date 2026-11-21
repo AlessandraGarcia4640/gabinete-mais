@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { dashboardFixture, routineFixture, taskFixture } from '../dashboard/fixtures.test-helper';
+import { gabineteDate } from '../dashboard/model';
 import { templateFixture, runFixture } from './fixtures.test-helper';
 import { ChecklistDetailScreen, ChecklistFormScreen, ChecklistHistoryScreen, ChecklistListScreen, ChecklistRunScreen } from './screens';
 import { ChecklistForm } from './form';
@@ -32,10 +33,53 @@ it('lista vazia e falha permitem nova tentativa', async () => {
   fetcher.mockImplementation(() => response({ items: [], nextCursor: null })); fireEvent.press(screen.getByRole('button', { name: strings.feedback.retry })); await screen.findByText(strings.checklists.empty);
 });
 it('histórico filtra pessoa e modelo e navega para execução', async () => {
-  mockParams = { templateId: 'template-1' }; fetcher.mockImplementation(() => response({ items: [runFixture()], nextCursor: null })); fixture.show(<ChecklistHistoryScreen />);
-  await screen.findByText(strings.checklists.progress(0, 1)); expect(String(fetcher.mock.calls[0]?.[0])).toContain('assigneeId=actor'); expect(String(fetcher.mock.calls[0]?.[0])).toContain('templateId=template-1');
-  fireEvent.press(screen.getByRole('radio', { name: strings.checklists.allRuns })); await waitFor(() => expect(String(fetcher.mock.calls.at(-1)?.[0])).not.toContain('assigneeId='));
-  fireEvent.press(await screen.findByRole('button', { name: /Checklist fictício/ })); expect(mockPush).toHaveBeenCalledWith({ pathname: '/execucao/[id]', params: { id: 'run-1' } });
+  mockParams = { templateId: 'template-1', routineId: 'routine-1' };
+  const run = runFixture({ periodStart: gabineteDate(), totalItems: 2, completedItems: 1, status: 'EM_ANDAMENTO', progress: 50 });
+  const name = 'Integrante Fictício';
+  fetcher.mockImplementation((url) => {
+    const path = new URL(String(url));
+    if (path.pathname === '/users/other') return response({
+      id: 'other', name, email: 'outra-pessoa@example.invalid', role: 'APOIO', position: 'APOIO', isActive: true,
+      createdAt: '2026-10-12T12:00:00Z', updatedAt: '2026-10-12T12:00:00Z',
+    });
+    return response({ items: [path.searchParams.has('assigneeId') ? run : { ...run, assigneeId: 'other' }], nextCursor: null });
+  });
+  fixture.show(<ChecklistHistoryScreen />);
+  await screen.findByRole('header', { name: strings.checklists.currentWeek });
+  expect(screen.getByText(strings.checklists.progressFraction(1, 2))).toBeTruthy();
+  expect(screen.queryByText(strings.checklists.personUnavailable)).toBeNull();
+  const initial = new URL(String(fetcher.mock.calls[0]?.[0])).searchParams;
+  expect(initial.get('assigneeId')).toBe('actor');
+  expect(initial.get('templateId')).toBe('template-1');
+  expect(initial.get('routineId')).toBe('routine-1');
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes('/users/'))).toBe(false);
+  fireEvent.press(screen.getByRole('radio', { name: strings.checklists.allRuns }));
+  await screen.findByText(strings.routines.metadata(run.titleSnapshot, name));
+  const all = fetcher.mock.calls.map(([url]) => new URL(String(url))).find((url) => url.pathname.endsWith('/runs') && !url.searchParams.has('assigneeId'));
+  expect(all?.searchParams.get('routineId')).toBe('routine-1');
+  expect(all?.searchParams.get('templateId')).toBe('template-1');
+  fireEvent.press(screen.getByRole('button', { name: /Checklist fictício/ }));
+  expect(mockPush).toHaveBeenCalledWith({ pathname: '/execucao/[id]', params: { id: 'run-1' } });
+});
+it('histórico preserva as linhas durante erro de paginação e tenta o mesmo cursor de novo', async () => {
+  const first = runFixture({ periodStart: gabineteDate() });
+  const second = runFixture({ id: 'run-2', periodStart: '2000-01-01', titleSnapshot: 'Execução fictícia anterior' });
+  let failed = false;
+  fetcher.mockImplementation((url) => {
+    const cursor = new URL(String(url)).searchParams.get('cursor');
+    if (!cursor) return response({ items: [first], nextCursor: 'run-1' });
+    if (!failed) { failed = true; return Promise.reject(new Error('offline')); }
+    return response({ items: [second], nextCursor: null });
+  });
+  fixture.show(<ChecklistHistoryScreen />);
+  await screen.findByRole('header', { name: strings.checklists.currentWeek });
+  fireEvent.press(screen.getByRole('button', { name: strings.feedback.loadMore }));
+  await screen.findByText(strings.feedback.updatingError);
+  expect(screen.getByText(first.titleSnapshot)).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: strings.feedback.retry }));
+  await screen.findByRole('header', { name: strings.checklists.otherRunDates });
+  expect(screen.getByText(second.titleSnapshot)).toBeTruthy();
+  expect(fetcher.mock.calls.map(([url]) => new URL(String(url)).searchParams.get('cursor'))).toEqual([null, 'run-1', 'run-1']);
 });
 it('formulário valida, usa passos da rotina e conserva dados após falha', async () => {
   chief(); const saved = jest.fn(); fetcher.mockRejectedValue(new Error('offline')); fixture.show(<ChecklistForm routine={routineFixture({ steps: ['Passo original'] })} onSaved={saved} onCancel={() => undefined} />);

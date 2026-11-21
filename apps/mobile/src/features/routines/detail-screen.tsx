@@ -73,7 +73,8 @@ function RoutineContent({ routine, canManage }: { routine: Routine; canManage: b
                 description={strings.checklists.modelSummary(strings.checklists.version(template.version), strings.checklists.itemCount(template.items.length))}
                 onPress={() => openTemplate(template.id)} />
             ))}
-            <ListRow title={strings.checklists.history} description={copy.allChecklistRuns} icon="clock" onPress={() => router.push('/execucoes')} />
+            <ListRow title={strings.checklists.history} icon="clock"
+              onPress={() => router.push({ pathname: '/execucoes', params: { routineId: routine.id } })} />
           </ListGroup>
           {templates.isError && !firstError && (
             <ErrorState updating retry={() => { if (templates.isFetchNextPageError) void templates.fetchNextPage(); else void templates.refetch(); }} />

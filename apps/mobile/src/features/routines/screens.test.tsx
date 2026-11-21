@@ -142,6 +142,8 @@ it('detalhe usa os modelos ativos da rotina e abre a ação de hoje com único m
   expect(screen.getByText(strings.routines.essential)).toBeTruthy();
   expect(screen.getByLabelText(strings.routines.stepDescription(0, 'Revisar documento fictício.'))).toBeTruthy();
   expect(screen.queryByRole('button', { name: strings.checklists.create })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: strings.checklists.history }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/execucoes', params: { routineId: routine.id } });
   fireEvent.press(screen.getByRole('button', { name: strings.routines.startTodayChecklist }));
   expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/checklist/[id]', params: { id: template.id } });
   const list = fetcher.mock.calls.map(([url]) => new URL(String(url))).find(({ pathname }) => pathname === '/checklists/templates');

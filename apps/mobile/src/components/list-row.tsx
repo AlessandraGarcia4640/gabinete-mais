@@ -8,7 +8,9 @@ import { Icon, type IconName } from './icon';
 
 interface ListRowProps {
   title: string;
+  titleVariant?: 'heading' | 'data';
   description?: string;
+  descriptionLines?: number;
   start?: ReactNode;
   end?: ReactNode;
   icon?: IconName;
@@ -19,7 +21,7 @@ interface ListRowProps {
 }
 
 export function ListRow({
-  title, description, start, end, icon, onPress, selected, accessibilityLabel, selection,
+  title, titleVariant = 'heading', description, descriptionLines, start, end, icon, onPress, selected, accessibilityLabel, selection,
 }: ListRowProps) {
   const { colors } = useTheme();
   const content = (
@@ -30,8 +32,8 @@ export function ListRow({
         </View>
       ))}
       <View style={styles.copy}>
-        <AppText variant="heading" numberOfLines={2}>{title}</AppText>
-        {!!description && <AppText variant="caption" color="inkMuted">{description}</AppText>}
+        <AppText variant={titleVariant} numberOfLines={2}>{title}</AppText>
+        {!!description && <AppText variant="caption" color="inkMuted" numberOfLines={descriptionLines}>{description}</AppText>}
       </View>
       {end}
       {onPress && !selection && <Icon name="chevron-right" size={iconSize.small} color="inkSubtle" />}
